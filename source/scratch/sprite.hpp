@@ -141,10 +141,16 @@ struct Block {
         OPERATOR_OR,
         OPERATOR_NOT,
         OPERATOR_CONTAINS,
-        
-
-
-
+        PEN_CLEAR,
+        PEN_STAMP,
+        PEN_PEN_DOWN,
+        PEN_PEN_UP,
+        PEN_SET_PEN_COLOR_TO_COLOR,
+        PEN_CHANGE_PEN_COLOR_PARAM_BY,
+        PEN_MENU_COLOR_PARAM,
+        PEN_SET_PEN_COLOR_PARAM_TO,
+        PEN_CHANGE_PEN_SIZE_BY,
+        PEN_SET_PEN_SIZE_TO
     };
     
     opCode stringToOpcode(std::string opCodeString){
@@ -254,6 +260,16 @@ struct Block {
         if(opCodeString == "operator_or")return OPERATOR_OR;
         if(opCodeString == "operator_not")return OPERATOR_NOT;
         if(opCodeString == "operator_contains")return OPERATOR_CONTAINS;
+        if(opCodeString == "pen_clear") return PEN_CLEAR;
+        if(opCodeString == "pen_stamp") return PEN_STAMP;
+        if(opCodeString == "pen_penDown") return PEN_PEN_DOWN;
+        if(opCodeString == "pen_penUp") return PEN_PEN_DOWN;
+        if(opCodeString == "pen_setPenColorToColor") return PEN_SET_PEN_COLOR_TO_COLOR;
+        if(opCodeString == "pen_changePenColorParamBy") return PEN_CHANGE_PEN_COLOR_PARAM_BY;
+        if(opCodeString == "pen_menu_colorParam") return PEN_MENU_COLOR_PARAM;
+        if(opCodeString == "pen_setPenColorParamTo") return PEN_SET_PEN_COLOR_PARAM_TO;
+        if(opCodeString == "pen_changePenSizeBy") return PEN_CHANGE_PEN_SIZE_BY;
+        if(opCodeString == "pen_setPenSizeTo") return PEN_SET_PEN_SIZE_TO;
         std::cerr << "Unknown opcode: " << opCodeString << std::endl;
         return NONE;
 

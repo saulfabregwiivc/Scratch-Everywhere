@@ -8,6 +8,7 @@
 #include "blocks/operator.hpp"
 #include "blocks/procedure.hpp"
 #include "blocks/sound.hpp"
+#include "blocks/pen.hpp"
 
 size_t blocksRun = 0;
 std::chrono::_V2::system_clock::time_point BlockExecutor::timer;
@@ -132,6 +133,18 @@ void BlockExecutor::registerHandlers(){
     handlers[Block::PROCEDURES_DEFINITION] = ProcedureBlocks::definition;
     valueHandlers[Block::ARGUMENT_REPORTER_STRING_NUMBER] = ProcedureBlocks::stringNumber;
     valueHandlers[Block::ARGUMENT_REPORTER_BOOLEAN] = ProcedureBlocks::booleanArgument;
+
+    // pen extension
+    handlers[Block::PEN_PEN_DOWN] = PenBlocks::PenDown;
+    handlers[Block::PEN_PEN_UP] = PenBlocks::PenUp;
+    handlers[Block::PEN_CLEAR] = PenBlocks::EraseAll;
+    handlers[Block::PEN_SET_PEN_COLOR_PARAM_TO] = PenBlocks::SetPenOptionTo;
+    handlers[Block::PEN_CHANGE_PEN_COLOR_PARAM_BY] = PenBlocks::ChangePenOptionBy;
+    handlers[Block::PEN_STAMP] = PenBlocks::Stamp;
+    handlers[Block::PEN_SET_PEN_COLOR_TO_COLOR] = PenBlocks::SetPenColorTo;
+    handlers[Block::PEN_SET_PEN_SIZE_TO] = PenBlocks::SetPenSizeTo;
+    handlers[Block::PEN_CHANGE_PEN_SIZE_BY] = PenBlocks::ChangePenSizeBy;
+
 
 }
 
