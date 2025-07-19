@@ -16,7 +16,7 @@ static void initApp(){
 	Render::Init();
 }
 
-int main(int argc, char **argv)
+int main(int argc, char* args[])
 {
 	initApp();
 	
@@ -68,7 +68,6 @@ int main(int argc, char **argv)
 	BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHENFLAGCLICKED);
 	BlockExecutor::timer = std::chrono::high_resolution_clock::now();
 
-
 	while (Render::appShouldRun())
 	{
 		
@@ -91,7 +90,7 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-	
+
 
 	exitApp();
 	return 0;

@@ -11,8 +11,8 @@ Render::RenderModes Render::renderMode = Render::TOP_SCREEN_ONLY;
 void Render::Init(){
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
     IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG);
-    window = SDL_CreateWindow("Scratch Runtime",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,windowWidth,windowHeight,SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    renderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED);
+    window = SDL_CreateWindow("Scratch Runtime",SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,400,480,SDL_WINDOW_SHOWN);
+    renderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
 
 }
 void Render::deInit(){
@@ -22,8 +22,6 @@ void Render::deInit(){
     SDL_Quit();
 }
 void Render::renderSprites(){
-    SDL_GetWindowSizeInPixels(window,&windowWidth,&windowHeight);
-    //SDL_SetWindowSize(window,Scratch::projectWidth,Scratch::projectHeight);
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
 
@@ -105,7 +103,6 @@ void Render::renderSprites(){
         // }
 
     }
-
 
     SDL_RenderPresent(renderer);
 }
