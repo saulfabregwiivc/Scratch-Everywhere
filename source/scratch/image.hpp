@@ -12,7 +12,8 @@ public:
     unsigned char* data;
     };
 
-    static void loadImages(mz_zip_archive *zip);
+    static void loadAllImages(mz_zip_archive *zip);
+    static bool loadImageFromCostume(mz_zip_archive *zip, const std::string& costumeId);
     static void loadImageFromFile(std::string filePath);
     static void freeImage(const std::string& costumeId);
     static void queueFreeImage(const std::string& costumeId);

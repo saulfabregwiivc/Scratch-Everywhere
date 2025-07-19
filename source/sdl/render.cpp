@@ -1,4 +1,6 @@
 #include "../scratch/render.hpp"
+#include "image.hpp"
+#include "../scratch/unzip.hpp"
 #include "render.hpp"
 #include "interpret.hpp"
 int windowWidth = 480;
@@ -42,11 +44,21 @@ void Render::renderSprites(){
     for(Sprite* currentSprite : spritesByLayer) {
         if(!currentSprite->visible) continue;
 
-        bool legacyDrawing = false;
-        auto imgFind = images.find(currentSprite->costumes[currentSprite->currentCostume].id);
+        bool legacyDrawing = true;
+        std::string costumeId = currentSprite->costumes[currentSprite->currentCostume].id;
+        auto imgFind = images.find(costumeId);
         if(imgFind == images.end()){
-            legacyDrawing = true;
-        }
+            if(Image::loadImageFromCostume(&Unzip::zipArchive, costumeId)){
+                // Re-find the image after loading it
+                imgFind = images.find(costumeId);
+                if(imgFind != images.end()) {
+                    legacyDrawing = false;
+                }
+            }
+            } else {
+                legacyDrawing = false;
+            }
+
         if(!legacyDrawing){
             SDL_Image* image = imgFind->second;
             SDL_RendererFlip flip = SDL_FLIP_NONE;
