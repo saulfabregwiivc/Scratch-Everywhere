@@ -43,7 +43,7 @@ void Render::renderSprites(){
         if(!currentSprite->visible) continue;
 
         bool legacyDrawing = false;
-        auto imgFind = images.find(currentSprite->costumes[currentSprite->currentCostume].id); // long ahh line
+        auto imgFind = images.find(currentSprite->costumes[currentSprite->currentCostume].id);
         if(imgFind == images.end()){
             legacyDrawing = true;
         }
@@ -76,6 +76,8 @@ void Render::renderSprites(){
             SDL_RenderCopyEx(renderer,image->spriteTexture,&image->textureRect,&image->renderRect,image->rotation,&center,flip);
         }
         else{
+            currentSprite->spriteWidth = 64;
+            currentSprite->spriteHeight = 64;
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_Rect rect;
             rect.x = (currentSprite->xPosition * scale) + (windowWidth / 2);
