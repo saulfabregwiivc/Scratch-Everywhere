@@ -3,27 +3,28 @@
 #include "../scratch/unzip.hpp"
 #include "render.hpp"
 #include "interpret.hpp"
+#include "render.hpp"
 int windowWidth = 480;
 int windowHeight = 360;
-SDL_Window* window = nullptr;
-SDL_Renderer* renderer = nullptr;
+SDL_Window *window = nullptr;
+SDL_Renderer *renderer = nullptr;
 
 Render::RenderModes Render::renderMode = Render::TOP_SCREEN_ONLY;
 
-void Render::Init(){
+void Render::Init() {
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER);
     IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG);
-    window = SDL_CreateWindow("Scratch Runtime",SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,400,480,SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Scratch Runtime",SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,windowWidth,windowHeight,SDL_WINDOW_SHOWN);
     renderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_SOFTWARE);
-
 }
-void Render::deInit(){
+void Render::deInit() {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     IMG_Quit();
     SDL_Quit();
 }
-void Render::renderSprites(){
+
+void Render::renderSprites() {
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderClear(renderer);
 
@@ -32,17 +33,15 @@ void Render::renderSprites(){
     double scale;
     scale = std::min(scaleX, scaleY);
 
-    
     // Sort sprites by layer first
-    std::vector<Sprite*> spritesByLayer = sprites;
-    std::sort(spritesByLayer.begin(), spritesByLayer.end(), 
-    [](const Sprite* a, const Sprite* b) {
-        return a->layer < b->layer;
-    });
+    std::vector<Sprite *> spritesByLayer = sprites;
+    std::sort(spritesByLayer.begin(), spritesByLayer.end(),
+              [](const Sprite *a, const Sprite *b) {
+                  return a->layer < b->layer;
+              });
 
-
-    for(Sprite* currentSprite : spritesByLayer) {
-        if(!currentSprite->visible) continue;
+    for (Sprite *currentSprite : spritesByLayer) {
+        if (!currentSprite->visible) continue;
 
         bool legacyDrawing = true;
         std::string costumeId = currentSprite->costumes[currentSprite->currentCostume].id;
@@ -63,31 +62,30 @@ void Render::renderSprites(){
             SDL_Image* image = imgFind->second;
             SDL_RendererFlip flip = SDL_FLIP_NONE;
 
-
             image->setScale((currentSprite->size * 0.01) * scale / 2.0f);
-            currentSprite->spriteWidth = image->renderRect.w;
-            currentSprite->spriteHeight = image->renderRect.h;
+            currentSprite->spriteWidth = image->textureRect.w / 2;
+            currentSprite->spriteHeight = image->textureRect.h / 2;
             image->renderRect.x = currentSprite->xPosition;
             image->renderRect.y = currentSprite->yPosition;
             image->setRotation(Math::degreesToRadians(currentSprite->rotation - 90.0f));
 
-            if(currentSprite->rotationStyle == currentSprite->LEFT_RIGHT){
-                if(image->rotation < 0){
+            if (currentSprite->rotationStyle == currentSprite->LEFT_RIGHT) {
+                if (image->rotation < 0) {
                     flip = SDL_FLIP_HORIZONTAL;
                 }
                 image->setRotation(0);
             }
-            if(currentSprite->rotationStyle == currentSprite->NONE){
+            if (currentSprite->rotationStyle == currentSprite->NONE) {
                 image->setRotation(0);
             }
-            
+
             image->renderRect.x = (currentSprite->xPosition * scale) + (windowWidth / 2) - (image->renderRect.w / 2);
             image->renderRect.y = (currentSprite->yPosition * -scale) + (windowHeight / 2) - (image->renderRect.h / 2);
-            SDL_Point center = {image->renderRect.w / 2,image->renderRect.h / 2};
+            SDL_Point center = {image->renderRect.w / 2, image->renderRect.h / 2};
 
-            SDL_RenderCopyEx(renderer,image->spriteTexture,&image->textureRect,&image->renderRect,image->rotation,&center,flip);
-        }
-        else{
+            SDL_RenderCopyEx(renderer, image->spriteTexture, &image->textureRect, &image->renderRect, image->rotation, &center, flip);
+        } else {
+          
             currentSprite->spriteWidth = 64;
             currentSprite->spriteHeight = 64;
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -96,7 +94,7 @@ void Render::renderSprites(){
             rect.y = (currentSprite->yPosition * -1 * scale) + (windowHeight * 0.5);
             rect.w = 16;
             rect.h = 16;
-            SDL_RenderDrawRect(renderer,&rect);
+            SDL_RenderDrawRect(renderer, &rect);
         }
 
         // Draw collision points (for debugging)
@@ -115,41 +113,35 @@ void Render::renderSprites(){
 
         //     SDL_RenderFillRect(renderer, &debugPointRect);
         // }
-
     }
 
     SDL_RenderPresent(renderer);
 }
 
-
-bool Render::appShouldRun(){
+bool Render::appShouldRun() {
     SDL_Event event;
-    while(SDL_PollEvent(&event)){
-        if(event.type == SDL_QUIT){
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
             return false;
         }
     }
     return true;
 }
 
+// TODO create functionality for these in the SDL version.
+// Would probably need to share more code between the two
+// versions first (eg; text renderer for SDL version)
 
-// i dont think we need these tbh
-void LoadingScreen::init(){
-
+void LoadingScreen::init() {
 }
-void LoadingScreen::renderLoadingScreen(){
-
+void LoadingScreen::renderLoadingScreen() {
 }
-void LoadingScreen::cleanup(){
-
+void LoadingScreen::cleanup() {
 }
 // or these,,,
-void MainMenu::init(){
-
+void MainMenu::init() {
 }
-void MainMenu::render(){
-
+void MainMenu::render() {
 }
-void MainMenu::cleanup(){
-
+void MainMenu::cleanup() {
 }

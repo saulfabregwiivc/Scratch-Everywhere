@@ -9,7 +9,7 @@ CXX        := g++
 CC         := gcc
 
 # Base compiler flags
-CXXFLAGS_BASE := -std=c++17 -Wall -D__PC__-fexceptions
+CXXFLAGS_BASE := -std=c++17 -Wall -D__PC__ -fexceptions
 CFLAGS_BASE   := -D__PC__
 
 # Debug and Release flags
