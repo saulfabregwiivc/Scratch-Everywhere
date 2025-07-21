@@ -13,9 +13,7 @@ static void exitApp() {
 }
 
 static bool initApp() {
-    if (!Render::Init())
-        return false;
-    return true;
+    return Render::Init();
 }
 
 int main(int argc, char **argv) {
