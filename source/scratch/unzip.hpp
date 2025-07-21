@@ -1,3 +1,4 @@
+#pragma once
 #include "interpret.hpp"
 #include <filesystem>
 #include <fstream>

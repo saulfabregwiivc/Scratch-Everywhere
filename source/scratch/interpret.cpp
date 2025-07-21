@@ -266,7 +266,7 @@ void loadSprites(const nlohmann::json &json) {
             newSound.dataFormat = data["dataFormat"];
             newSound.sampleRate = data["rate"];
             newSound.sampleCount = data["sampleCount"];
-            newSprite->sounds[newSound.id] = newSound;
+            newSprite->sounds[newSound.name] = newSound;
         }
 
         // set Costumes
