@@ -109,7 +109,10 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
                     imageLoaded = false;
                 }
 
-            } else imageLoaded = true;
+            } else {
+                imageLoaded = true;
+                imageC2Ds[costumeId].freeTimer = 240;
+            }
 
             break;
         }
@@ -136,7 +139,6 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
     scale = bottom ? 1.0 : std::min(scaleX, scaleY);
 
     if (!legacyDrawing) {
-        imageC2Ds[costumeId].freeTimer = 240;
         double rotation = Math::degreesToRadians(currentSprite->rotation - 90.0f);
         bool flipX = false;
 
@@ -173,6 +175,7 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
             &tinty,
             (spriteSizeX)*scale / 2.0f,
             (spriteSizeY)*scale / 2.0f);
+        currentSprite->lastCostumeId = costumeId;
     } else {
         C2D_DrawRectSolid(
             (currentSprite->xPosition * scale) + (screenWidth / 2),
@@ -201,8 +204,6 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
     if (Input::mousePointer.isMoving)
         C2D_DrawRectSolid((Input::mousePointer.x * scale) + (screenWidth / 2),
                           (Input::mousePointer.y * -1 * scale) + (SCREEN_HEIGHT * heightMultiplier) + screenOffset, 1, 5, 5, clrGreen);
-
-    currentSprite->lastCostumeId = costumeId;
 }
 
 void Render::renderSprites() {

@@ -1,7 +1,9 @@
 #include "image.hpp"
 #include "../scratch/os.hpp"
 #include <algorithm>
+#include <cstdio>
 #include <iostream>
+#include <sys/stat.h>
 #include <vector>
 #define STBI_NO_GIF
 #define STB_IMAGE_IMPLEMENTATION
@@ -103,6 +105,12 @@ void Image::loadImages(mz_zip_archive *zip) {
 
             Image::imageRGBAS.push_back(newRGBA);
             mz_free(png_data);
+            get_C2D_Image(newRGBA);
+            freeImage(newRGBA.name);
+
+            size_t dataSize = newRGBA.width * newRGBA.height * 4;
+            stbi_image_free(newRGBA.data);
+            MemoryTracker::deallocate(nullptr, dataSize);
         }
     }
 }
@@ -150,6 +158,18 @@ void Image::loadImageFromFile(std::string filePath) {
 
     Log::log("successfuly laoded image from file!");
     imageRGBAS.push_back(newRGBA);
+    get_C2D_Image(newRGBA);
+    freeImage(newRGBA.name);
+
+    size_t dataSize = newRGBA.width * newRGBA.height * 4;
+    stbi_image_free(newRGBA.data);
+    MemoryTracker::deallocate(nullptr, dataSize);
+}
+
+void C2D_LoaderThread(void *data) {
+    Image::ImageRGBA *rgba = static_cast<Image::ImageRGBA *>(data);
+    get_C2D_Image(*rgba);
+    rgba->isLoading = false;
 }
 
 /**
@@ -163,10 +183,29 @@ bool queueC2DImage(Image::ImageRGBA &rgba) {
             inQueue = true;
         }
     }
-    if (!inQueue) {
+    if (!inQueue && !rgba.isLoading) {
         // no queue!!!
         if (memStats.totalVRamUsage + rgba.textureMemSize < MAX_IMAGE_VRAM) {
-            return get_C2D_Image(rgba);
+            rgba.isLoading = true;
+            s32 mainPrio = 0;
+            svcGetThreadPriority(&mainPrio, CUR_THREAD_HANDLE);
+            bool isNew3DS = false;
+            int cpuCore = 1;
+
+            // 3rd core on new 3ds because 2nd core is used for sound loading
+            APT_CheckNew3DS(&isNew3DS);
+            if (isNew3DS)
+                cpuCore = 2;
+
+            threadCreate(
+                C2D_LoaderThread,
+                &rgba,
+                0x4000,
+                mainPrio + 1,
+                cpuCore,
+                true);
+            return false;
+            // return get_C2D_Image(rgba);
         }
         // add to queue D:
         else {
@@ -185,9 +224,19 @@ bool queueC2DImage(Image::ImageRGBA &rgba) {
  * then edited to fit my code
  */
 bool get_C2D_Image(Image::ImageRGBA rgba) {
+    // Create cache directory if it doesn't exist
+    mkdir("Scratch_Cache", 0777);
 
-    u32 px_count = rgba.width * rgba.height;
-    u32 *rgba_raw = reinterpret_cast<u32 *>(rgba.data);
+    // Generate cache filename based on image properties
+    char cache_filename[256];
+    snprintf(cache_filename, sizeof(cache_filename),
+             "Scratch_Cache/%s_%dx%d_%dx%d.cache",
+             rgba.name.c_str(), rgba.width, rgba.height,
+             rgba.textureWidth, rgba.textureHeight);
+
+    // Check if cached file exists
+    FILE *cache_file = fopen(cache_filename, "rb");
+    bool cache_exists = (cache_file != nullptr);
 
     // Image data
     C2D_Image image;
@@ -200,14 +249,12 @@ bool get_C2D_Image(Image::ImageRGBA rgba) {
     // Texture dimensions must be square powers of two between 64x64 and 1024x1024
     tex->width = rgba.textureWidth;
     tex->height = rgba.textureHeight;
-
     size_t textureSize = rgba.textureMemSize;
     memStats.totalVRamUsage += textureSize;
 
     // Subtexture
     Tex3DS_SubTexture *subtex = MemoryTracker::allocate<Tex3DS_SubTexture>();
     new (subtex) Tex3DS_SubTexture();
-
     image.subtex = subtex;
     subtex->width = rgba.width;
     subtex->height = rgba.height;
@@ -220,14 +267,17 @@ bool get_C2D_Image(Image::ImageRGBA rgba) {
 
     if (!C3D_TexInit(tex, tex->width, tex->height, GPU_RGBA8)) {
         Log::logWarning("Texture initializing failed!");
+        if (cache_file) fclose(cache_file);
         MemoryTracker::deallocate(tex);
         MemoryTracker::deallocate(subtex);
         return false;
     }
+
     C3D_TexSetFilter(tex, GPU_NEAREST, GPU_NEAREST);
 
     if (!tex->data) {
         Log::logWarning("Texture data is null!");
+        if (cache_file) fclose(cache_file);
         C3D_TexDelete(tex);
         MemoryTracker::deallocate(tex);
         MemoryTracker::deallocate(subtex);
@@ -235,22 +285,100 @@ bool get_C2D_Image(Image::ImageRGBA rgba) {
     }
 
     memset(tex->data, 0, textureSize);
-    for (u32 i = 0; i < (u32)rgba.width; i++) {
-        for (u32 j = 0; j < (u32)rgba.height; j++) {
-            u32 src_idx = (j * rgba.width) + i;
-            u32 rgba_px = rgba_raw[src_idx];
-            u32 abgr_px = rgba_to_abgr(rgba_px);
 
-            // Swizzle magic to convert into a t3x format
-            u32 dst_ptr_offset = ((((j >> 3) * (tex->width >> 3) + (i >> 3)) << 6) +
-                                  ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) |
-                                   ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3)));
-            ((u32 *)tex->data)[dst_ptr_offset] = abgr_px;
+    if (cache_exists) {
+        // Load from cache
+        Log::log("Loading C2D Image from cache: %s", cache_filename);
+
+        // Read cache header to verify compatibility
+        struct CacheHeader {
+            u32 width;
+            u32 height;
+            u32 textureWidth;
+            u32 textureHeight;
+            size_t textureSize;
+        } header;
+
+        if (fread(&header, sizeof(header), 1, cache_file) == 1 &&
+            header.width == rgba.width &&
+            header.height == rgba.height &&
+            header.textureWidth == rgba.textureWidth &&
+            header.textureHeight == rgba.textureHeight &&
+            header.textureSize == textureSize) {
+
+            // Cache is valid, load texture data
+            if (fread(tex->data, textureSize, 1, cache_file) == 1) {
+                fclose(cache_file);
+                Log::log("C2D Image successfully loaded from cache!");
+                imageC2Ds[rgba.name] = {image, 120};
+                C3D_FrameSync();
+                return true;
+            } else {
+                Log::logWarning("Failed to read texture data from cache");
+            }
+        } else {
+            Log::logWarning("Cache header mismatch, regenerating cache");
+        }
+
+        fclose(cache_file);
+        cache_exists = false; // Force regeneration
+    }
+
+    if (!cache_exists) {
+        // Generate texture data from scratch
+        Log::log("Generating C2D Image texture data...");
+
+        u32 px_count = rgba.width * rgba.height;
+        u32 *rgba_raw = reinterpret_cast<u32 *>(rgba.data);
+
+        for (u32 i = 0; i < (u32)rgba.width; i++) {
+            for (u32 j = 0; j < (u32)rgba.height; j++) {
+                u32 src_idx = (j * rgba.width) + i;
+                u32 rgba_px = rgba_raw[src_idx];
+                u32 abgr_px = rgba_to_abgr(rgba_px);
+
+                // Swizzle magic to convert into a t3x format
+                u32 dst_ptr_offset = ((((j >> 3) * (tex->width >> 3) + (i >> 3)) << 6) +
+                                      ((i & 1) | ((j & 1) << 1) | ((i & 2) << 1) |
+                                       ((j & 2) << 2) | ((i & 4) << 2) | ((j & 4) << 3)));
+
+                ((u32 *)tex->data)[dst_ptr_offset] = abgr_px;
+            }
+        }
+
+        // Save to cache
+        cache_file = fopen(cache_filename, "wb");
+        if (cache_file) {
+            Log::log("Saving C2D Image to cache: %s", cache_filename);
+
+            // Write cache header
+            struct CacheHeader {
+                u32 width;
+                u32 height;
+                u32 textureWidth;
+                u32 textureHeight;
+                size_t textureSize;
+            } header = {
+                rgba.width,
+                rgba.height,
+                rgba.textureWidth,
+                rgba.textureHeight,
+                textureSize};
+
+            if (fwrite(&header, sizeof(header), 1, cache_file) == 1 &&
+                fwrite(tex->data, textureSize, 1, cache_file) == 1) {
+                Log::log("Cache saved successfully");
+            } else {
+                Log::logWarning("Failed to save cache file");
+            }
+
+            fclose(cache_file);
+        } else {
+            Log::logWarning("Failed to create cache file: %s", cache_filename);
         }
     }
 
     Log::log("C2D Image Successfully loaded!");
-
     imageC2Ds[rgba.name] = {image, 120};
     C3D_FrameSync(); // wait for Async functions to finish
     return true;
@@ -317,7 +445,7 @@ void Image::queueFreeImage(const std::string &costumeId) {
 void Image::FlushImages() {
 
     // free unused images if vram usage is high
-    if (memStats.totalVRamUsage > MAX_IMAGE_VRAM * 0.8) {
+    if (memStats.totalVRamUsage > MAX_IMAGE_VRAM * 0.85) {
         ImageData *imgToDelete = nullptr;
         std::string toDeleteStr;
         for (auto &[id, img] : imageC2Ds) {
@@ -332,11 +460,7 @@ void Image::FlushImages() {
     }
     // free images on a timer
     for (auto &[id, img] : imageC2Ds) {
-        if (img.freeTimer <= 0) {
-            toDelete.push_back(id);
-        } else {
-            img.freeTimer -= 1;
-        }
+        img.freeTimer -= 1;
     }
 
     for (const std::string &id : toDelete) {
