@@ -1,10 +1,11 @@
 #include "interpret.hpp"
+#include "os.hpp"
+#include "render.hpp"
 
-std::vector<Sprite*> sprites;
+std::vector<Sprite *> sprites;
 std::vector<Sprite> spritePool;
 std::vector<std::string> broadcastQueue;
-//std::unordered_map<std::string,Conditional> conditionals;
-std::unordered_map<std::string, Block*> blockLookup;
+std::unordered_map<std::string, Block *> blockLookup;
 std::string answer;
 bool toExit = false;
 ProjectType projectType;
@@ -14,33 +15,12 @@ BlockExecutor executor;
 int Scratch::projectWidth = 480;
 int Scratch::projectHeight = 360;
 int Scratch::FPS = 30;
-
-std::string generateRandomString(int length) {
-    std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-=[];',./_+{}|:<>?~`";
-    std::string result;
-
-    static std::random_device rd;
-    static std::mt19937 generator(rd());
-    std::uniform_int_distribution<> distribution(0, chars.size() - 1);
-
-    for (int i = 0; i < length; i++) {
-        result += chars[distribution(generator)];
-    }
-
-    return result;
-
-
-}
-
-std::string removeQuotations(std::string value) {
-    value.erase(std::remove_if(value.begin(),value.end(),[](char c){return c == '"';}),value.end());
-    return value;
-}
+bool Scratch::fencing = true;
 
 void initializeSpritePool(int poolSize) {
     for (int i = 0; i < poolSize; i++) {
         Sprite newSprite;
-        newSprite.id = generateRandomString(15);
+        newSprite.id = Math::generateRandomString(15);
         newSprite.isClone = true;
         newSprite.toDelete = true;
         newSprite.isDeleted = true;
@@ -48,19 +28,19 @@ void initializeSpritePool(int poolSize) {
     }
 }
 
-Sprite* getAvailableSprite() {
-    for (Sprite& sprite : spritePool) {
+Sprite *getAvailableSprite() {
+    for (Sprite &sprite : spritePool) {
         if (sprite.isDeleted) {
             sprite.isDeleted = false;
             sprite.toDelete = false;
             return &sprite;
         }
     }
-    return nullptr;  // No available sprites
+    return nullptr;
 }
 
 void cleanupSprites() {
-    for (Sprite* sprite : sprites) {
+    for (Sprite *sprite : sprites) {
         delete sprite;
     }
 
@@ -68,7 +48,7 @@ void cleanupSprites() {
     sprites.clear();
 }
 
-std::vector<std::pair<double, double>> getCollisionPoints(Sprite* currentSprite) {
+std::vector<std::pair<double, double>> getCollisionPoints(Sprite *currentSprite) {
     std::vector<std::pair<double, double>> collisionPoints;
 
     // Get sprite dimensions, scaled by size
@@ -76,80 +56,102 @@ std::vector<std::pair<double, double>> getCollisionPoints(Sprite* currentSprite)
     double halfHeight = (currentSprite->spriteHeight * currentSprite->size / 100.0) / 2.0;
 
     // Calculate rotation in radians
-    double rotationRadians = (currentSprite->rotation - 90) * M_PI / 180.0;
+    double rotation = currentSprite->rotation;
+
+    if (currentSprite->rotationStyle == currentSprite->NONE) rotation = 90;
+    if (currentSprite->rotationStyle == currentSprite->LEFT_RIGHT) {
+        if (currentSprite->rotation > 0)
+            rotation = 90;
+        else
+            rotation = -90;
+    }
+
+    double rotationRadians = (rotation - 90) * M_PI / 180.0;
+    double rotationCenterX = ((currentSprite->rotationCenterX - currentSprite->spriteWidth) * 0.75);
+    double rotationCenterY = ((currentSprite->rotationCenterY - currentSprite->spriteHeight) * 0.75);
 
     // Define the four corners relative to the sprite's center
     std::vector<std::pair<double, double>> corners = {
-        { -halfWidth, -halfHeight }, // Top-left
-        { halfWidth, -halfHeight },  // Top-right
-        { halfWidth, halfHeight },   // Bottom-right
-        { -halfWidth, halfHeight }   // Bottom-left
+        {-halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY)}, // Top-left
+        {halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY)},  // Top-right
+        {halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY)},   // Bottom-right
+        {-halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY)}   // Bottom-left
     };
 
     // Rotate and translate each corner
-    for (const auto& corner : corners) {
+    for (const auto &corner : corners) {
         double rotatedX = corner.first * cos(rotationRadians) - corner.second * sin(rotationRadians);
         double rotatedY = corner.first * sin(rotationRadians) + corner.second * cos(rotationRadians);
 
         collisionPoints.emplace_back(
             currentSprite->xPosition + rotatedX,
-            currentSprite->yPosition + rotatedY
-        );
+            currentSprite->yPosition + rotatedY);
     }
 
     return collisionPoints;
 }
 
-void loadSprites(const nlohmann::json& json){
-    std::cout<<"Beginning to load sprites..."<< std::endl;
+void Scratch::fenceSpriteWithinBounds(Sprite *sprite) {
+    // todo do this later
+}
+
+void loadSprites(const nlohmann::json &json) {
+    Log::log("beginning to load sprites...");
     sprites.reserve(400);
     int count = 0;
-    for (const auto& target : json["targets"]){ // "target" is sprite in Scratch speak, so for every sprite in sprites
-    
-        Sprite* newSprite = new Sprite();
-        if(target.contains("name")){
-        newSprite->name = target["name"].get<std::string>();}
-        newSprite->id = generateRandomString(15);
-        if(target.contains("isStage")){
-        newSprite->isStage = target["isStage"].get<bool>();}
-        if(target.contains("draggable")){
-        newSprite->draggable = target["draggable"].get<bool>();}
-        if(target.contains("visible")){
-        newSprite->visible = target["visible"].get<bool>();}
-        else newSprite->visible = true;
-        if(target.contains("currentCostume")){
-        newSprite->currentCostume = target["currentCostume"].get<int>();}
-        if(target.contains("volume")){
-        newSprite->volume = target["volume"].get<int>();}
-        if(target.contains("x")){
-        newSprite->xPosition = target["x"].get<int>();}
-        if(target.contains("y")){
-        newSprite->yPosition = target["y"].get<int>();}
-        if(target.contains("size")){
-        newSprite->size = target["size"].get<int>();}
-        else newSprite->size = 100;
-        if(target.contains("direction")){
-        newSprite->rotation = target["direction"].get<int>();}
-        else newSprite->rotation = 90;
-        if(target.contains("layerOrder")){
-        newSprite->layer = target["layerOrder"].get<int>();}
-        else newSprite->layer = 0;
-        if(target.contains("rotationStyle")){
-            if(target["rotationStyle"].get<std::string>() == "all around")
-            newSprite->rotationStyle = newSprite->ALL_AROUND;
-            else if(target["rotationStyle"].get<std::string>() == "left-right")
-            newSprite->rotationStyle = newSprite->LEFT_RIGHT;
+    for (const auto &target : json["targets"]) { // "target" is sprite in Scratch speak, so for every sprite in sprites
+
+        Sprite *newSprite = MemoryTracker::allocate<Sprite>();
+        new (newSprite) Sprite();
+        if (target.contains("name")) {
+            newSprite->name = target["name"].get<std::string>();
+        }
+        newSprite->id = Math::generateRandomString(15);
+        if (target.contains("isStage")) {
+            newSprite->isStage = target["isStage"].get<bool>();
+        }
+        if (target.contains("draggable")) {
+            newSprite->draggable = target["draggable"].get<bool>();
+        }
+        if (target.contains("visible")) {
+            newSprite->visible = target["visible"].get<bool>();
+        } else newSprite->visible = true;
+        if (target.contains("currentCostume")) {
+            newSprite->currentCostume = target["currentCostume"].get<int>();
+        }
+        if (target.contains("volume")) {
+            newSprite->volume = target["volume"].get<int>();
+        }
+        if (target.contains("x")) {
+            newSprite->xPosition = target["x"].get<int>();
+        }
+        if (target.contains("y")) {
+            newSprite->yPosition = target["y"].get<int>();
+        }
+        if (target.contains("size")) {
+            newSprite->size = target["size"].get<int>();
+        } else newSprite->size = 100;
+        if (target.contains("direction")) {
+            newSprite->rotation = target["direction"].get<int>();
+        } else newSprite->rotation = 90;
+        if (target.contains("layerOrder")) {
+            newSprite->layer = target["layerOrder"].get<int>();
+        } else newSprite->layer = 0;
+        if (target.contains("rotationStyle")) {
+            if (target["rotationStyle"].get<std::string>() == "all around")
+                newSprite->rotationStyle = newSprite->ALL_AROUND;
+            else if (target["rotationStyle"].get<std::string>() == "left-right")
+                newSprite->rotationStyle = newSprite->LEFT_RIGHT;
             else
-            newSprite->rotationStyle = newSprite->NONE;
-    }
+                newSprite->rotationStyle = newSprite->NONE;
+        }
         newSprite->toDelete = false;
         newSprite->isClone = false;
-       // std::cout<<"name = "<< newSprite.name << std::endl;
-
+        // std::cout<<"name = "<< newSprite.name << std::endl;
 
         // set variables
-        for (const auto& [id,data] : target["variables"].items()){
-            
+        for (const auto &[id, data] : target["variables"].items()) {
+
             Variable newVariable;
             newVariable.id = id;
             newVariable.name = data[0];
@@ -158,65 +160,64 @@ void loadSprites(const nlohmann::json& json){
         }
 
         // set Blocks
-        for(const auto& [id,data] : target["blocks"].items()){
+        for (const auto &[id, data] : target["blocks"].items()) {
 
             Block newBlock;
             newBlock.id = id;
-            if (data.contains("opcode")){
-            newBlock.opcode = newBlock.stringToOpcode(data["opcode"].get<std::string>());}
-            if (data.contains("next") && !data["next"].is_null()){
-            newBlock.next = data["next"].get<std::string>();}
-            if (data.contains("parent") && !data["parent"].is_null()){
-            newBlock.parent = data["parent"].get<std::string>();}
-            else newBlock.parent = "null";
-            if (data.contains("fields")){
-            newBlock.fields = data["fields"];}
-            if (data.contains("inputs")){
+            if (data.contains("opcode")) {
+                newBlock.opcode = newBlock.stringToOpcode(data["opcode"].get<std::string>());
+            }
+            if (data.contains("next") && !data["next"].is_null()) {
+                newBlock.next = data["next"].get<std::string>();
+            }
+            if (data.contains("parent") && !data["parent"].is_null()) {
+                newBlock.parent = data["parent"].get<std::string>();
+            } else newBlock.parent = "null";
+            if (data.contains("fields")) {
+                newBlock.fields = data["fields"];
+            }
+            if (data.contains("inputs")) {
 
-                for(const auto& [inputName,inputData] : data["inputs"].items()){
+                for (const auto &[inputName, inputData] : data["inputs"].items()) {
                     ParsedInput parsedInput;
-                   // parsedInput.originalJson = inputData;
 
                     int type = inputData[0];
-                    auto& inputValue = inputData[1];
+                    auto &inputValue = inputData[1];
 
-
-                    if(type == 1){
+                    if (type == 1) {
                         parsedInput.inputType = ParsedInput::LITERAL;
-                        //std::cout << "doing it! " << inputValue.dump() << std::endl;
                         parsedInput.literalValue = Value::fromJson(inputValue);
-                        //std::cout << "literal value = " << parsedInput.literalValue.asString();
 
-                    } else if(type == 3){
-                        if(inputValue.is_array()){
+                    } else if (type == 3) {
+                        if (inputValue.is_array()) {
                             parsedInput.inputType = ParsedInput::VARIABLE;
                             parsedInput.variableId = inputValue[2].get<std::string>();
-                        } else{
+                        } else {
                             parsedInput.inputType = ParsedInput::BLOCK;
-                            parsedInput.blockId = inputValue.get<std::string>();
+                            if (!inputValue.is_null())
+                                parsedInput.blockId = inputValue.get<std::string>();
                         }
-                    } else if(type == 2){
+                    } else if (type == 2) {
                         parsedInput.inputType = ParsedInput::BOOLEAN;
                         parsedInput.blockId = inputValue.get<std::string>();
                     }
                     newBlock.parsedInputs[inputName] = parsedInput;
-                    //std::cout << "input: " << inputName << ". type = " << parsedInput.inputType << std::endl;
+                    // std::cout << "input: " << inputName << ". type = " << parsedInput.inputType << std::endl;
                 }
-
-        }
-            if (data.contains("topLevel")){
-            newBlock.topLevel = data["topLevel"].get<bool>();}
-            if (data.contains("shadow")){
-            newBlock.shadow = data["shadow"].get<bool>();}
-            if (data.contains("mutation")){
+            }
+            if (data.contains("topLevel")) {
+                newBlock.topLevel = data["topLevel"].get<bool>();
+            }
+            if (data.contains("shadow")) {
+                newBlock.shadow = data["shadow"].get<bool>();
+            }
+            if (data.contains("mutation")) {
                 newBlock.mutation = data["mutation"];
             }
             newSprite->blocks[newBlock.id] = newBlock; // add block
 
-
-            
             // add custom function blocks
-            if(newBlock.opcode == newBlock.PROCEDURES_PROTOTYPE){
+            if (newBlock.opcode == newBlock.PROCEDURES_PROTOTYPE) {
                 CustomBlock newCustomBlock;
                 newCustomBlock.name = data["mutation"]["proccode"];
                 newCustomBlock.blockId = newBlock.id;
@@ -228,36 +229,45 @@ void loadSprites(const nlohmann::json& json){
 
                 std::string rawArgumentDefaults = data["mutation"]["argumentdefaults"];
                 nlohmann::json parsedAD = nlohmann::json::parse(rawArgumentDefaults);
-                newCustomBlock.argumentDefaults = parsedAD.get<std::vector<std::string>>();
+                // newCustomBlock.argumentDefaults = parsedAD.get<std::vector<std::string>>();
+
+                for (const auto &item : parsedAD) {
+                    if (item.is_string()) {
+                        newCustomBlock.argumentDefaults.push_back(item.get<std::string>());
+                    } else if (item.is_number_integer()) {
+                        newCustomBlock.argumentDefaults.push_back(std::to_string(item.get<int>()));
+                    } else if (item.is_number_float()) {
+                        newCustomBlock.argumentDefaults.push_back(std::to_string(item.get<double>()));
+                    } else {
+                        newCustomBlock.argumentDefaults.push_back(item.dump());
+                    }
+                }
 
                 std::string rawArgumentIds = data["mutation"]["argumentids"];
                 nlohmann::json parsedAID = nlohmann::json::parse(rawArgumentIds);
                 newCustomBlock.argumentIds = parsedAID.get<std::vector<std::string>>();
 
-                if(data["mutation"]["warp"] == "true"){
-                newCustomBlock.runWithoutScreenRefresh = true;}
-                else newCustomBlock.runWithoutScreenRefresh = false;
+                if (data["mutation"]["warp"] == "true") {
+                    newCustomBlock.runWithoutScreenRefresh = true;
+                } else newCustomBlock.runWithoutScreenRefresh = false;
 
                 newSprite->customBlocks[newCustomBlock.name] = newCustomBlock; // add custom block
             }
-
         }
 
-
-
         // set Lists
-        for(const auto &[id,data] : target["lists"].items()){
+        for (const auto &[id, data] : target["lists"].items()) {
             List newList;
             newList.id = id;
             newList.name = data[0];
-            for(const auto &listItem : data[1]){
-            newList.items.push_back(Value::fromJson(listItem));
+            for (const auto &listItem : data[1]) {
+                newList.items.push_back(Value::fromJson(listItem));
             }
             newSprite->lists[newList.id] = newList; // add list
         }
 
         // set Sounds
-        for(const auto &[id,data] : target["sounds"].items()){
+        for (const auto &[id, data] : target["sounds"].items()) {
             Sound newSound;
             newSound.id = data["assetId"];
             newSound.name = data["name"];
@@ -265,34 +275,41 @@ void loadSprites(const nlohmann::json& json){
             newSound.dataFormat = data["dataFormat"];
             newSound.sampleRate = data["rate"];
             newSound.sampleCount = data["sampleCount"];
-            newSprite->sounds[newSound.id] = newSound;
+            newSprite->sounds[newSound.name] = newSound;
         }
 
         // set Costumes
-        for(const auto &[id,data] : target["costumes"].items()){
+        for (const auto &[id, data] : target["costumes"].items()) {
             Costume newCostume;
             newCostume.id = data["assetId"];
-            if(data.contains("name")){
-            newCostume.name = data["name"];}
-            if(data.contains("bitmapResolution")){
-            newCostume.bitmapResolution = data["bitmapResolution"];}
-            if(data.contains("dataFormat")){
-            newCostume.dataFormat = data["dataFormat"];}
-            if(data.contains("md5ext")){
-            newCostume.fullName = data["md5ext"];}
-            if(data.contains("rotationCenterX")){
-            newCostume.rotationCenterX = data["rotationCenterX"];}
-            if(data.contains("rotationCenterY")){
-            newCostume.rotationCenterY = data["rotationCenterY"];}
+            if (data.contains("name")) {
+                newCostume.name = data["name"];
+            }
+            if (data.contains("bitmapResolution")) {
+                newCostume.bitmapResolution = data["bitmapResolution"];
+            }
+            if (data.contains("dataFormat")) {
+                newCostume.dataFormat = data["dataFormat"];
+            }
+            if (data.contains("md5ext")) {
+                newCostume.fullName = data["md5ext"];
+            }
+            if (data.contains("rotationCenterX")) {
+                newCostume.rotationCenterX = data["rotationCenterX"];
+            }
+            if (data.contains("rotationCenterY")) {
+                newCostume.rotationCenterY = data["rotationCenterY"];
+            }
             newSprite->costumes.push_back(newCostume);
         }
 
-       // set comments
-        for(const auto &[id,data] : target["comments"].items()){
+        // set comments
+        for (const auto &[id, data] : target["comments"].items()) {
             Comment newComment;
             newComment.id = id;
-            if(data.contains("blockId") && !data["blockId"].is_null()){
-            newComment.blockId = data["blockId"];}
+            if (data.contains("blockId") && !data["blockId"].is_null()) {
+                newComment.blockId = data["blockId"];
+            }
             newComment.width = data["width"];
             newComment.height = data["height"];
             newComment.minimized = data["minimized"];
@@ -303,153 +320,254 @@ void loadSprites(const nlohmann::json& json){
         }
 
         // set Broadcasts
-        for(const auto &[id,data] : target["broadcasts"].items()){
+        for (const auto &[id, data] : target["broadcasts"].items()) {
             Broadcast newBroadcast;
             newBroadcast.id = id;
             newBroadcast.name = data;
             newSprite->broadcasts[newBroadcast.id] = newBroadcast;
-           // std::cout<<"broadcast name = "<< newBroadcast.name << std::endl;
+            // std::cout<<"broadcast name = "<< newBroadcast.name << std::endl;
         }
 
         sprites.push_back(newSprite);
         count++;
+    }
 
+    for (const auto &monitor : json["monitors"]) { // "monitor" is any variable shown on screen
+        Monitor newMonitor;
 
+        if (monitor.contains("id") && !monitor["id"].is_null())
+            newMonitor.id = monitor.at("id").get<std::string>();
+
+        if (monitor.contains("mode") && !monitor["mode"].is_null())
+            newMonitor.mode = monitor.at("mode").get<std::string>();
+
+        if (monitor.contains("opcode") && !monitor["opcode"].is_null())
+            newMonitor.opcode = Block::stringToOpcode(monitor.at("opcode").get<std::string>());
+
+        if (monitor.contains("params") && monitor["params"].is_object()) {
+            for (const auto &param : monitor["params"].items()) {
+                std::string key = param.key();
+                std::string value = param.value().dump();
+                newMonitor.parameters[key] = value;
+            }
+        }
+
+        if (monitor.contains("spriteName") && !monitor["spriteName"].is_null())
+            newMonitor.spriteName = monitor.at("spriteName").get<std::string>();
+        else
+            newMonitor.spriteName = "";
+
+        if (monitor.contains("value") && !monitor["value"].is_null())
+            newMonitor.value = Value(Math::removeQuotations(monitor.at("value").dump()));
+
+        if (monitor.contains("x") && !monitor["x"].is_null())
+            newMonitor.x = monitor.at("x").get<int>();
+
+        if (monitor.contains("y") && !monitor["y"].is_null())
+            newMonitor.y = monitor.at("y").get<int>();
+
+        if (monitor.contains("visible") && !monitor["visible"].is_null())
+            newMonitor.visible = monitor.at("visible").get<bool>();
+
+        if (monitor.contains("isDiscrete") && !monitor["isDiscrete"].is_null())
+            newMonitor.isDiscrete = monitor.at("isDiscrete").get<bool>();
+
+        if (monitor.contains("sliderMin") && !monitor["sliderMin"].is_null())
+            newMonitor.sliderMin = monitor.at("sliderMin").get<double>();
+
+        if (monitor.contains("sliderMax") && !monitor["sliderMax"].is_null())
+            newMonitor.sliderMax = monitor.at("sliderMax").get<double>();
+
+        Render::visibleVariables.push_back(newMonitor);
     }
 
     // load block lookup table
     blockLookup.clear();
-    for (Sprite* sprite : sprites) {
-        for (auto& [id, block] : sprite->blocks) {
+    for (Sprite *sprite : sprites) {
+        for (auto &[id, block] : sprite->blocks) {
             blockLookup[id] = &block;
         }
     }
     // setup top level blocks
-    for (Sprite* currentSprite : sprites) {
-    for(auto& [id,block]: currentSprite->blocks){
-        if(block.topLevel) continue; // skip top level blocks
-        block.topLevelParentBlock = getBlockParent(&block)->id; // get parent block id
-        //std::cout<<"block id = "<< block.topLevelParentBlock << std::endl;
+    for (Sprite *currentSprite : sprites) {
+        for (auto &[id, block] : currentSprite->blocks) {
+            if (block.topLevel) continue;                           // skip top level blocks
+            block.topLevelParentBlock = getBlockParent(&block)->id; // get parent block id
+            // std::cout<<"block id = "<< block.topLevelParentBlock << std::endl;
+        }
     }
-}
 
     // try to find the advanced project settings comment
     nlohmann::json config;
-    for (Sprite* currentSprite : sprites) {
-        if(!currentSprite->isStage) continue;
-        for(auto& [id,comment] : currentSprite->comments){
-        std::size_t json_start = comment.text.find('{');
-        if (json_start == std::string::npos) continue;
+    for (Sprite *currentSprite : sprites) {
+        if (!currentSprite->isStage) continue;
+        for (auto &[id, comment] : currentSprite->comments) {
+            // make sure its the turbowarp comment
+            std::size_t settingsFind = comment.text.find("Configuration for https");
+            if (settingsFind == std::string::npos) continue;
+            std::size_t json_start = comment.text.find('{');
+            if (json_start == std::string::npos) continue;
 
-        std::string json_str = comment.text.substr(json_start);
-        std::size_t json_end = json_str.find("}");
-        if (json_end != std::string::npos) {
-            json_str = json_str.substr(0, json_end + 1);}
-        else continue;
+            // Use brace counting to find the true end of the JSON
+            int braceCount = 0;
+            std::size_t json_end = json_start;
+            bool in_string = false;
 
-        try {
-            config = nlohmann::json::parse(json_str);
-            //std::cout << "Parsed JSON:\n" << config.dump(4) << "\n";
-            break;
-    } catch (nlohmann::json::parse_error& e) {
-        //std::cerr << "Failed to parse JSON: " << e.what() << "\n";
-        continue;
-    }
+            for (; json_end < comment.text.size(); ++json_end) {
+                char c = comment.text[json_end];
+
+                if (c == '"' && (json_end == 0 || comment.text[json_end - 1] != '\\')) {
+                    in_string = !in_string;
+                }
+
+                if (!in_string) {
+                    if (c == '{') braceCount++;
+                    else if (c == '}') braceCount--;
+
+                    if (braceCount == 0) {
+                        json_end++; // Include final '}'
+                        break;
+                    }
+                }
+            }
+
+            if (braceCount != 0) {
+                continue;
+            }
+
+            std::string json_str = comment.text.substr(json_start, json_end - json_start);
+
+            // Replace inifity with null, since the json cant handle infinity
+            std::string cleaned_json = json_str;
+            std::size_t inf_pos;
+            while ((inf_pos = cleaned_json.find("Infinity")) != std::string::npos) {
+                cleaned_json.replace(inf_pos, 8, "1e9"); // or replace with "null", depending on your logic
+            }
+
+            try {
+                config = nlohmann::json::parse(cleaned_json);
+                break;
+            } catch (nlohmann::json::parse_error &e) {
+                continue;
+            }
         }
     }
     // set advanced project settings properties
-    try{
-       int framerate = config["framerate"].get<int>();
-       Scratch::FPS = framerate;
+    int wdth = 0;
+    int hght = 0;
+    int framerate = 0;
+    bool fncng = true;
+
+    try {
+        framerate = config["framerate"].get<int>();
+        Scratch::FPS = framerate;
+        Log::log("FPS = " + Scratch::FPS);
+    } catch (...) {
+        Log::logWarning("no framerate property.");
     }
-    catch(...){
-        //std::cerr << "no framerate property." << std::endl;
+    try {
+        wdth = config["width"].get<int>();
+        Scratch::projectWidth = wdth;
+        Log::log("game width = " + Scratch::projectWidth);
+    } catch (...) {
+        Log::logWarning("no width property.");
     }
-        try{
-       int wdth = config["width"].get<int>();
-       Scratch::projectWidth = wdth;
+    try {
+        hght = config["height"].get<int>();
+        Scratch::projectHeight = hght;
+        Log::log("game height = " + Scratch::projectHeight);
+    } catch (...) {
+        Log::logWarning("no height property.");
     }
-    catch(...){
-        //std::cerr << "no width property." << std::endl;
-    }
-        try{
-       int hght = config["height"].get<int>();
-       Scratch::projectHeight = hght;
-    }
-    catch(...){
-        //std::cerr << "no height property." << std::endl;
-    }
-    
-    // if unzipped, load initial sprites
-    if(projectType == UNZIPPED){
-        for(auto& currentSprite : sprites){
-            Image::loadImageFromFile(currentSprite->costumes[currentSprite->currentCostume].id);
-        }
+    try {
+        fncng = config["fencing"].get<bool>();
+        Scratch::fencing = fncng;
+        Log::log("Fencing is " + Scratch::fencing);
+    } catch (...) {
+        Log::logWarning("no fencing property.");
     }
 
+    if (wdth == 400 && hght == 480)
+        Render::renderMode = Render::BOTH_SCREENS;
+    else if (wdth == 320 && hght == 240)
+        Render::renderMode = Render::BOTTOM_SCREEN_ONLY;
+    else
+        Render::renderMode = Render::TOP_SCREEN_ONLY;
+
+    // if unzipped, load initial sprites
+    if (projectType == UNZIPPED) {
+        for (auto &currentSprite : sprites) {
+            Image::loadImageFromFile(currentSprite->costumes[currentSprite->currentCostume].fullName);
+        }
+    }
 
     initializeSpritePool(300);
 
     // get block chains for every block
-    for (Sprite* currentSprite : sprites) {
-    for(auto& [id,block]: currentSprite->blocks){
-        if(!block.topLevel) continue;
-        std::string outID;
-        BlockChain chain;
-        chain.blockChain = getBlockChain(block.id,&outID);
-        currentSprite->blockChains[outID] = chain;
-        //std::cout << "ok = " << outID << std::endl;
-        block.blockChainID = outID;
+    for (Sprite *currentSprite : sprites) {
+        for (auto &[id, block] : currentSprite->blocks) {
+            if (!block.topLevel) continue;
+            std::string outID;
+            BlockChain chain;
+            chain.blockChain = getBlockChain(block.id, &outID);
+            currentSprite->blockChains[outID] = chain;
+            // std::cout << "ok = " << outID << std::endl;
+            block.blockChainID = outID;
 
-        for(auto& chainBlock : chain.blockChain) {
-            if(currentSprite->blocks.find(chainBlock->id) != currentSprite->blocks.end()) {
-                currentSprite->blocks[chainBlock->id].blockChainID = outID;
+            for (auto &chainBlock : chain.blockChain) {
+                if (currentSprite->blocks.find(chainBlock->id) != currentSprite->blocks.end()) {
+                    currentSprite->blocks[chainBlock->id].blockChainID = outID;
+                }
             }
         }
-
     }
+
+    Log::log("Loaded " + std::to_string(sprites.size()) + " sprites.");
 }
 
-    std::cout<<"Loaded " << sprites.size() << " sprites."<< std::endl;
-}
-
-
-
-Block* findBlock(std::string blockId){
-
+Block *findBlock(std::string blockId) {
 
     auto block = blockLookup.find(blockId);
-    if(block != blockLookup.end()) {
+    if (block != blockLookup.end()) {
         return block->second;
     }
-
 
     return nullptr;
 }
 
-std::vector<Block*> getBlockChain(std::string blockId,std::string* outID){
-    std::vector<Block*> blockChain;
-    Block* currentBlock = findBlock(blockId);
-    while(currentBlock != nullptr){
+std::vector<Block *> getBlockChain(std::string blockId, std::string *outID) {
+    std::vector<Block *> blockChain;
+    Block *currentBlock = findBlock(blockId);
+    while (currentBlock != nullptr) {
         blockChain.push_back(currentBlock);
-        if(outID)
-        *outID += currentBlock->id;
-        if(!currentBlock->parsedInputs["SUBSTACK"].originalJson[1].is_null()){
-            std::vector<Block*> subBlockChain;
-            subBlockChain = getBlockChain(currentBlock->parsedInputs["SUBSTACK"].originalJson[1],outID);
-            for(auto& block : subBlockChain){
+        if (outID)
+            *outID += currentBlock->id;
+
+        auto substackIt = currentBlock->parsedInputs.find("SUBSTACK");
+        if (substackIt != currentBlock->parsedInputs.end() &&
+            (substackIt->second.inputType == ParsedInput::BOOLEAN || substackIt->second.inputType == ParsedInput::BLOCK) &&
+            !substackIt->second.blockId.empty()) {
+
+            std::vector<Block *> subBlockChain;
+            subBlockChain = getBlockChain(substackIt->second.blockId, outID);
+            for (auto &block : subBlockChain) {
                 blockChain.push_back(block);
-                if(outID)
-                *outID += block->id;
+                if (outID)
+                    *outID += block->id;
             }
         }
-        if(!currentBlock->parsedInputs["SUBSTACK2"].originalJson[1].is_null()){
-            std::vector<Block*> subBlockChain;
-            subBlockChain = getBlockChain(currentBlock->parsedInputs["SUBSTACK2"].originalJson[1],outID);
-            for(auto& block : subBlockChain){
+
+        auto substack2It = currentBlock->parsedInputs.find("SUBSTACK2");
+        if (substack2It != currentBlock->parsedInputs.end() &&
+            (substack2It->second.inputType == ParsedInput::BOOLEAN || substack2It->second.inputType == ParsedInput::BLOCK) &&
+            !substack2It->second.blockId.empty()) {
+
+            std::vector<Block *> subBlockChain;
+            subBlockChain = getBlockChain(substack2It->second.blockId, outID);
+            for (auto &block : subBlockChain) {
                 blockChain.push_back(block);
-                if(outID)
-                *outID += block->id;
+                if (outID)
+                    *outID += block->id;
             }
         }
         currentBlock = findBlock(currentBlock->next);
@@ -457,182 +575,41 @@ std::vector<Block*> getBlockChain(std::string blockId,std::string* outID){
     return blockChain;
 }
 
-Block* getBlockParent(const Block* block){
-    Block* parentBlock;
-    const Block* currentBlock = block;
-    while(currentBlock->parent != "null"){
+Block *getBlockParent(const Block *block) {
+    Block *parentBlock;
+    const Block *currentBlock = block;
+    while (currentBlock->parent != "null") {
         parentBlock = findBlock(currentBlock->parent);
-        if(parentBlock != nullptr){
+        if (parentBlock != nullptr) {
             currentBlock = parentBlock;
-        }
-        else{
+        } else {
             break;
         }
     }
-    return const_cast<Block*>(currentBlock);
+    return const_cast<Block *>(currentBlock);
 }
 
+Value Scratch::getInputValue(Block &block, const std::string &inputName, Sprite *sprite) {
+    auto parsedFind = block.parsedInputs.find(inputName);
 
+    if (parsedFind == block.parsedInputs.end()) {
+        return Value();
+    }
 
+    const ParsedInput &input = parsedFind->second;
+    switch (input.inputType) {
 
-Value findCustomValue(std::string valueName, Sprite* sprite, Block block) {
-    for (auto& [custId, custBlock] : sprite->customBlocks) {
+    case ParsedInput::LITERAL:
+        return input.literalValue;
 
-        auto it = std::find(custBlock.argumentNames.begin(), custBlock.argumentNames.end(), valueName);
-        
-        if (it != custBlock.argumentNames.end()) {
-            size_t index = std::distance(custBlock.argumentNames.begin(), it);
+    case ParsedInput::VARIABLE:
+        return BlockExecutor::getVariableValue(input.variableId, sprite);
 
-            if (index < custBlock.argumentIds.size()) {
-                std::string argumentId = custBlock.argumentIds[index];
+    case ParsedInput::BLOCK:
+        return executor.getBlockValue(*findBlock(input.blockId), sprite);
 
-                auto valueIt = custBlock.argumentValues.find(argumentId);
-                if (valueIt != custBlock.argumentValues.end()) {
-                   //std::cout << "FOUND that shit BAAANG: " << valueIt->second.asString() << std::endl;
-                    return valueIt->second;
-                } else {
-                   std::cout << "Argument ID found, but no value exists for it." << std::endl;
-                }
-            } else {
-              std::cout << "Index out of bounds for argumentIds!" << std::endl;
-            }
-        }
+    case ParsedInput::BOOLEAN:
+        return executor.getBlockValue(*findBlock(input.blockId), sprite);
     }
     return Value();
 }
-
-void runCustomBlock(Sprite* sprite,Block& block, Block* callerBlock,bool* withoutScreenRefresh){
-    for(auto &[id, data] : sprite->customBlocks){
-        if(id == block.mutation.at("proccode").get<std::string>()){
-            // Set up argument values
-            for(std::string arg : data.argumentIds){
-                if(block.parsedInputs.find(arg) != block.parsedInputs.end()){
-                    data.argumentValues[arg] = Scratch::getInputValue(block, arg,sprite);
-                }
-            }
-            
-            //std::cout << "running custom block " << data.blockId << std::endl;
-            
-            // Get the parent of the prototype block (the definition containing all blocks)
-            Block* customBlockDefinition = &sprite->blocks[sprite->blocks[data.blockId].parent];
-            
-            callerBlock->customBlockPtr = customBlockDefinition;
-
-            bool localWithoutRefresh = data.runWithoutScreenRefresh;
-
-            
-            // If the parent chain is running without refresh, force this one to also run without refresh
-            if(!localWithoutRefresh && withoutScreenRefresh != nullptr) {
-                localWithoutRefresh = *withoutScreenRefresh;
-            }
-            
-            //std::cout << "RWSR = " << localWithoutRefresh << std::endl;
-            
-            // Execute the custom block definition
-            executor.runBlock(*customBlockDefinition, sprite, nullptr, &localWithoutRefresh);
-
-            if(localWithoutRefresh){
-                BlockExecutor::runRepeatsWithoutRefresh(sprite,customBlockDefinition->blockChainID);
-            }
-            
-            break;
-        }
-    }
-}
-
-
-
-
-void setVariableValue(const std::string& variableId, const Value& newValue, Sprite* sprite) {
-    // Set sprite variable
-    auto it = sprite->variables.find(variableId);
-    if (it != sprite->variables.end()) {
-        it->second.value = newValue;
-        return;
-    }
-    
-    // Set global variable
-    for (auto& currentSprite : sprites) {
-        if (currentSprite->isStage) {
-            auto globalIt = currentSprite->variables.find(variableId);
-            if (globalIt != currentSprite->variables.end()) {
-                globalIt->second.value = newValue;
-                return;
-            }
-        }
-    }
-}
-
-Value getVariableValue(std::string variableId, Sprite* sprite) {
-    // Check sprite variables
-    auto it = sprite->variables.find(variableId);
-    if (it != sprite->variables.end()) {
-        return it->second.value;  // Fast conversion
-    }
-    
-    // Check lists
-    auto listIt = sprite->lists.find(variableId);
-    if (listIt != sprite->lists.end()) {
-        std::string result;
-        for (const auto& item : listIt->second.items) {
-            result += item.asString() + " ";
-        }
-        if (!result.empty()) result.pop_back();
-        Value val(result);
-        return val;
-    }
-    
-    // Check global variables
-    for (const auto& currentSprite : sprites) {
-        if (currentSprite->isStage) {
-            auto globalIt = currentSprite->variables.find(variableId);
-            if (globalIt != currentSprite->variables.end()) {
-                return globalIt->second.value;
-            }
-        }
-    }
-    
-    return Value(0);
-}
-
-Value Scratch::getInputValue(Block& block, const std::string& inputName, Sprite* sprite){
-        auto parsedFind = block.parsedInputs.find(inputName);
-
-        if (parsedFind == block.parsedInputs.end()) {
-            return Value(0);
-        }
-        
-        const ParsedInput& input = parsedFind->second;
-        switch(input.inputType) {
-
-            case ParsedInput::LITERAL:
-                return input.literalValue;
-                
-            case ParsedInput::VARIABLE:
-                return getVariableValue(input.variableId, sprite);
-                
-            case ParsedInput::BLOCK:
-                return executor.getBlockValue(*findBlock(input.blockId), sprite);
-                
-            case ParsedInput::BOOLEAN:
-                return executor.getBlockValue(*findBlock(input.blockId), sprite);
-                
-        }
-        return Value(0);
-    }
-
-
-
-
-std::vector<Sprite*> findSprite(std::string spriteName){
-    std::vector<Sprite*> sprts;
-    for(Sprite* currentSprite : sprites){
-        if(currentSprite->name == spriteName){
-            sprts.push_back(currentSprite);
-        }
-    }
-    return sprts;
-}
-
-
-

@@ -1,37 +1,65 @@
 #include "../scratch/unzip.hpp"
 
+#ifdef __WIIU__
+#include <sstream>
+#include <whb/sdcard.h>
+#endif
+
 volatile int Unzip::projectOpened;
 volatile bool Unzip::threadFinished;
+std::string Unzip::filePath = "";
+mz_zip_archive Unzip::zipArchive;
+std::vector<char> Unzip::zipBuffer;
 
-bool Unzip::openFile(std::ifstream *file){
-    std::cout<<"Unzipping Scratch Project..."<<std::endl;
+int Unzip::openFile(std::ifstream *file) {
+    Log::log("Unzipping Scratch project...");
 
     // load Scratch project into memory
-    std::cout<<"Loading SB3 into memory..."<<std::endl;
-    const char* filename = "project.sb3";
-    const char* unzippedPath = "project/project.json";
+    Log::log("Loading SB3 into memory...");
+    std::string filename = "project.sb3";
+    std::string unzippedPath = "project/project.json";
 
-    //first try embedded unzipped project
+#ifdef __WIIU__
+    file->open("romfs:/" + unzippedPath, std::ios::binary | std::ios::ate);
+#else
     file->open(unzippedPath, std::ios::binary | std::ios::ate);
+#endif
     projectType = UNZIPPED;
-    if(!(*file)){
-        std::cerr<<"No unzipped project, trying embedded."<<std::endl;
+    if (!(*file)) {
+        Log::logWarning("No unzipped project, trying embedded.");
 
-        // try embedded zipped sb3
-        file->open(std::string(filename), std::ios::binary | std::ios::ate); // loads file from romfs
+#ifdef __WIIU__
+        file->open("romfs:/" + filename, std::ios::binary | std::ios::ate);
+#else
+        file->open(filePath, std::ios::binary | std::ios::ate);
+#endif
         projectType = EMBEDDED;
-        if (!(*file)){
-            std::cerr<<"Couldnt find file. jinkies."<<std::endl;
-            return false;
+#ifdef __WIIU__
+        if (!(*file)) {
+            std::ostringstream path;
+            path << WHBGetSdCardMountPath() << "/wiiu/scratch-wiiu/" << filePath;
+            file->open(path.str(), std::ios::binary | std::ios::ate);
+#endif
+            if (!(*file)) {
+                // if main menu hasn't been loaded yet, load it
+                if (filePath == "") {
+                    Log::log("Activating main menu...");
+                    return -1;
+                } else {
+                    Log::logError("Couldn't find file. jinkies.");
+                    return 0;
+                }
+            }
+#ifdef __WIIU__
         }
+#endif
     }
-    return true;
+    return 1;
 }
 
-
-bool Unzip::load(){
+bool Unzip::load() {
     openScratchProject(NULL);
-    if(Unzip::projectOpened == 1)
-    return true;
+    if (Unzip::projectOpened == 1)
+        return true;
     else return false;
 }

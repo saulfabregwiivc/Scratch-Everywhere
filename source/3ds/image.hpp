@@ -1,15 +1,18 @@
 #pragma once
-#include <unordered_map>
+#include "../scratch/image.hpp"
 #include <3ds.h>
 #include <citro2d.h>
+#include <citro3d.h>
 #include <string>
-#include "../scratch/image.hpp"
+#include <unordered_map>
 
-struct ImageData{
+struct ImageData {
     C2D_Image image;
-    u16 freeTimer = 120;
+    u16 freeTimer = 240;
 };
 
-C2D_Image get_C2D_Image(Image::ImageRGBA* rgba);
+bool get_C2D_Image(Image::ImageRGBA rgba);
+bool queueC2DImage(Image::ImageRGBA &rgba);
+void freeRGBA(const std::string &imageName);
 
 extern std::unordered_map<std::string, ImageData> imageC2Ds;
