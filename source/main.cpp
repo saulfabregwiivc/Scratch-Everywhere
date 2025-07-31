@@ -23,11 +23,11 @@ static bool initApp() {
 
 static void mainLoop() {
     // this is for the FPS
-    static std::chrono::steady_clock::time_point startTime = std::chrono::high_resolution_clock::now();
-    static std::chrono::steady_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+    static std::chrono::high_resolution_clock::time_point startTime = std::chrono::high_resolution_clock::now();
+    static std::chrono::high_resolution_clock::time_point endTime = std::chrono::high_resolution_clock::now();
     // this is for frametime check
-    static std::chrono::steady_clock::time_point frameStartTime = std::chrono::high_resolution_clock::now();
-    static std::chrono::steady_clock::time_point frameEndTime = std::chrono::high_resolution_clock::now();
+    static std::chrono::high_resolution_clock::time_point frameStartTime = std::chrono::high_resolution_clock::now();
+    static std::chrono::high_resolution_clock::time_point frameEndTime = std::chrono::high_resolution_clock::now();
 
     endTime = std::chrono::high_resolution_clock::now();
     if (endTime - startTime >= std::chrono::milliseconds(1000 / Scratch::FPS)) {
