@@ -7,6 +7,7 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <unistd.h>
 #endif
 
 // arm-none-eabi-addr2line -e Scratch.elf xxx
@@ -49,6 +50,10 @@ static void mainLoop() {
 }
 
 int main(int argc, char **argv) {
+#ifdef __EMSCRIPTEN__
+    chdir("romfs");
+#endif
+
     if (!initApp()) {
         exitApp();
         return 1;

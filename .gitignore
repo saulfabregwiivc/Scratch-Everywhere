@@ -50,6 +50,7 @@ main.code-workspace
 *.html
 *.wasm
 *.js
+*.data
 romfs/sample.ogg
 romfs/project.sb3_FILES/project.json
 Scratch-pc

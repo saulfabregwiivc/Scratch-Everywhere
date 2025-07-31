@@ -5,12 +5,15 @@ TARGET_JS		:=	scratch.js
 BUILD				:=	build/web
 SOURCES			:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
 INCLUDES		:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
+ROMFS				:=	romfs
+GRAPHICS		:=	gfx
+GFXBUILD		:=	$(ROMFS)/gfx
 
 CXX	:=	em++
 CC	:=	emcc
 
 # Base compiler flags
-EMFLAGS_BASE	:=	-sUSE_SDL=2 -sUSE_SDL_IMAGE=2 -sUSE_SDL_TTF=2 -sUSE_SDL_MIXER=2 -sALLOW_MEMORY_GROWTH=1
+EMFLAGS_BASE	:=	-sUSE_SDL=2 -sUSE_SDL_IMAGE=2 -sUSE_SDL_TTF=2 -sUSE_SDL_MIXER=2 -sALLOW_MEMORY_GROWTH=1 --preload-file $(ROMFS)
 CXXFLAGS_BASE	:=	-std=c++17 -Wall -D__WEB__ -fexceptions $(EMFLAGS_BASE)
 CFLAGS_BASE		:=	-D__WEB__ $(EMFLAGS_BASE)
 
@@ -42,13 +45,17 @@ all: debug
 debug: CXXFLAGS := $(CXXFLAGS_DEBUG)
 debug: CFLAGS   := $(CFLAGS_DEBUG)
 debug: LDFLAGS  := $(LDFLAGS_DEBUG)
-debug: $(BUILD)/$(TARGET_HTML)
+debug: $(GFXBUILD) $(BUILD)/$(TARGET_HTML)
 
 # Release build
 release: CXXFLAGS := $(CXXFLAGS_RELEASE)
 release: CFLAGS   := $(CFLAGS_RELEASE)
 release: LDFLAGS  := $(LDFLAGS_RELEASE)
-release: $(BUILD)/$(TARGET_HTML)
+release: $(GFXBUILD) $(BUILD)/$(TARGET_HTML)
+
+$(GFXBUILD):
+	@mkdir -p $@
+	@cp -r $(GRAPHICS)/* $@/
 
 # Final linking step
 $(BUILD)/$(TARGET_HTML): $(OBJS)
