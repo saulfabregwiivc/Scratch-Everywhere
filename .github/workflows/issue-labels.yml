@@ -37,7 +37,7 @@ jobs:
             }
 
             if (devicesHeading) {
-              const regex = new RegExp(`${devicesHeading}\n\n(.*)`, 'm');
+              const regex = new RegExp(`${devicesHeading}\\s*([^\n]+)`, 'm');
               const match = body.match(regex);
               if (match && match[1]) deviceSelections = match[1].split('\n')[0].trim();
             }
