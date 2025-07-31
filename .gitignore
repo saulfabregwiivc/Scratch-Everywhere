@@ -48,6 +48,7 @@ main.code-workspace
 *.sb3
 *.t3x
 *.html
+!shell.html
 *.wasm
 *.js
 *.data
