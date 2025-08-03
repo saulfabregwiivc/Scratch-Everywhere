@@ -10,6 +10,7 @@ class Image {
         int width;
         int height;
         bool isLoading = false;
+        bool isSVG = false;
 
         //  same as width/height but as powers of 2 for 3DS
         int textureWidth;
