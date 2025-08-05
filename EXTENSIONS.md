@@ -14,6 +14,12 @@ identical to normal Scratch extensions so for more detail, see
 - Extension library: The code or compiled library of a extension.
 - Extension config: The `extension.json` file of the extension.
 
+## Directory Structure
+
+The directory structure is pretty simple, it's just a directory with the
+extensions id within the extensions folder with an `extension.json` file and a
+`extension.so`/`extension.rpl`/`extension.dll`/`extension.dylib` file.
+
 ## Extension Library
 
 ## `extension.json`
