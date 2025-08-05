@@ -23,7 +23,6 @@ This is equivalent to `getInfo` in normal Scratch extensions.
 ### Root Structure
 
 - `id`: `string` - The internal id of the extension.
-- `name`: `string` - The name of the extension.
 - `blocks`: `Block[]` - An array of [block](#block-structure)s.
 - `menus`: `{[id: string]: Menu}` - A list of menus usable as
   [argument](#argument-structure)s.
@@ -33,7 +32,6 @@ This is equivalent to `getInfo` in normal Scratch extensions.
 - `opcode`: `string`: The opcode of the block.
 - `type`: `"command" | "reporter" | "boolean" | "hat" | "event"`: The type/shape
   the block is.
-- `text`: `string`: The text content of the block.
 - `arguments` (optional): `{[id: string]: Argument}`: The arguments of the
   block.
 
