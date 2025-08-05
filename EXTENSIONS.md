@@ -22,7 +22,6 @@ This is equivalent to `getInfo` in normal Scratch extensions.
 
 ### Root Structure
 
-- `id`: `string` - The internal id of the extension.
 - `blocks`: `Block[]` - An array of [block](#block-structure)s.
 - `menus`: `{[id: string]: Menu}` - A list of menus usable as
   [argument](#argument-structure)s.
