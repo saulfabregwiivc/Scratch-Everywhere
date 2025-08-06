@@ -49,6 +49,8 @@ bool Render::Init() {
 
 #ifdef __WII__
     fatInitDefault();
+    windowWidth = 640;
+    windowHeight = 480;
 #endif
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);

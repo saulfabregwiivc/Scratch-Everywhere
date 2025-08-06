@@ -23,7 +23,7 @@ TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
 DATA		:=	data
-INCLUDES	:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
+INCLUDES	:=	$(LIBDIRS:%=%/include) include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
 GFX		:=	gfx
 
 # Config Options
@@ -33,11 +33,7 @@ ENABLE_BUBBLES		?=	1
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-CFLAGS	:=	-g -O2 -Wall -Wextra $(MACHDEP) \
-		-ffunction-sections -fdata-sections \
-		$(INCLUDE) -D__WII__ -DSDL_BUILD -DCONSOLE -DMOUSE_INPUT -Wno-unused-parameter
-
-CFLAGS	+=	`$(PKGCONF_WII) --cflags sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2`
+CFLAGS	:=	`$(PREFIX)pkg-config --cflags sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2` -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DWII -D__WII__ -DSDL_BUILD -DCONSOLE -DMOUSE_INPUT
 
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -std=c++17 -fexceptions
 
@@ -46,31 +42,13 @@ ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	:=	-g $(MACHDEP) -Wl,-Map,$(notdir $*.map) \
 		-Wl,--gc-sections
 
-LIBS	:=	`$(PKGCONF_WII) --libs sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2` -lfat
+LIBDIRS	:=	$(LIBOGC) $(DEVKITPRO)/portlibs/wii
+LIBS	:=	`$(PREFIX)pkg-config --libs sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2`
 
 ifeq ($(ENABLE_BUBBLES),1)
 CFLAGS	+=	-DENABLE_BUBBLES
 endif
 
-ifeq ($(ENABLE_CLOUDVARS),1)
-CFLAGS	+=	-DENABLE_CLOUDVARS `$(PKGCONF_WII) --cflags mist++`
-LIBS	+=	`$(PKGCONF_WII) --libs mist++`
-
-# Mist++ Version Check
-ifeq ($(shell $(PKGCONF_WII) --atleast-version=0.2.0 mist++ >/dev/null 2>&1; echo $$?),1)
-$(error "[ERROR] Mist++ must be v0.2.0 or newer.")
-endif
-endif
-
-#---------------------------------------------------------------------------------
-# list of directories containing libraries, this must be the top level containing
-# include and lib
-#---------------------------------------------------------------------------------
-LIBDIRS	:=	$(LIBOGC) $(DEVKITPRO)/portlibs/wii
-
-#---------------------------------------------------------------------------------
-# no real need to edit anything past this point unless you need to add additional
-# rules for different file extensions
 #---------------------------------------------------------------------------------
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
