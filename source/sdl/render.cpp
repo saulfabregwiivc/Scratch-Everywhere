@@ -13,6 +13,10 @@
 #include <whb/sdcard.h>
 #endif
 
+#ifdef __WII__
+#include <fat.h>
+#endif
+
 int windowWidth = 480;
 int windowHeight = 360;
 SDL_Window *window = nullptr;
@@ -41,6 +45,10 @@ bool Render::Init() {
     nn::act::Initialize();
     windowWidth = 854;
     windowHeight = 480;
+#endif
+
+#ifdef __WII__
+    fatInitDefault();
 #endif
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);

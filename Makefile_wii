@@ -1,0 +1,179 @@
+# WII MAKEFILE
+
+#---------------------------------------------------------------------------------
+.SUFFIXES:
+#---------------------------------------------------------------------------------
+
+ifeq ($(strip $(DEVKITPPC)),)
+$(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
+endif
+
+TOPDIR ?= $(CURDIR)
+include $(DEVKITPPC)/wii_rules
+
+PKGCONF_WII	:=	$(DEVKITPRO)/portlibs/wii/bin/powerpc-eabi-pkg-config
+
+#---------------------------------------------------------------------------------
+# Application info
+#---------------------------------------------------------------------------------
+APP_TITLE	:=	Scratch Wii
+APP_DESCRIPTION	:=	Play Scratch Games on the Wii!
+APP_AUTHOR	:=	NateXS
+TARGET		:=	$(notdir $(CURDIR))
+BUILD		:=	build
+SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
+DATA		:=	data
+INCLUDES	:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
+GFX		:=	gfx
+
+# Config Options
+ENABLE_CLOUDVARS	?=	0
+ENABLE_BUBBLES		?=	1
+
+#---------------------------------------------------------------------------------
+# options for code generation
+#---------------------------------------------------------------------------------
+CFLAGS	:=	-g -O2 -Wall -Wextra $(MACHDEP) \
+		-ffunction-sections -fdata-sections \
+		$(INCLUDE) -D__WII__ -DSDL_BUILD -DCONSOLE -DMOUSE_INPUT -Wno-unused-parameter
+
+CFLAGS	+=	`$(PKGCONF_WII) --cflags sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2`
+
+CXXFLAGS	:=	$(CFLAGS) -fno-rtti -std=c++17 -fexceptions
+
+ASFLAGS	:=	-g $(ARCH)
+
+LDFLAGS	:=	-g $(MACHDEP) -Wl,-Map,$(notdir $*.map) \
+		-Wl,--gc-sections
+
+LIBS	:=	`$(PKGCONF_WII) --libs sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2` -lfat
+
+ifeq ($(ENABLE_BUBBLES),1)
+CFLAGS	+=	-DENABLE_BUBBLES
+endif
+
+ifeq ($(ENABLE_CLOUDVARS),1)
+CFLAGS	+=	-DENABLE_CLOUDVARS `$(PKGCONF_WII) --cflags mist++`
+LIBS	+=	`$(PKGCONF_WII) --libs mist++`
+
+# Mist++ Version Check
+ifeq ($(shell $(PKGCONF_WII) --atleast-version=0.2.0 mist++ >/dev/null 2>&1; echo $$?),1)
+$(error "[ERROR] Mist++ must be v0.2.0 or newer.")
+endif
+endif
+
+#---------------------------------------------------------------------------------
+# list of directories containing libraries, this must be the top level containing
+# include and lib
+#---------------------------------------------------------------------------------
+LIBDIRS	:=	$(LIBOGC) $(DEVKITPRO)/portlibs/wii
+
+#---------------------------------------------------------------------------------
+# no real need to edit anything past this point unless you need to add additional
+# rules for different file extensions
+#---------------------------------------------------------------------------------
+ifneq ($(BUILD),$(notdir $(CURDIR)))
+#---------------------------------------------------------------------------------
+
+export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export TOPDIR	:=	$(CURDIR)
+
+export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
+			$(foreach dir,$(GFX),$(CURDIR)/$(dir)) \
+			$(foreach dir,$(DATA),$(CURDIR)/$(dir))
+
+export DEPSDIR	:=	$(CURDIR)/$(BUILD)
+
+CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
+BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
+SCFFILES	:=	$(foreach dir,$(GFX),$(notdir $(wildcard $(dir)/*.scf)))
+TPLFILES	:=	$(SCFFILES:.scf=.tpl)
+
+#---------------------------------------------------------------------------------
+# use CXX for linking C++ projects, CC for standard C
+#---------------------------------------------------------------------------------
+ifeq ($(strip $(CPPFILES)),)
+#---------------------------------------------------------------------------------
+	export LD	:=	$(CC)
+#---------------------------------------------------------------------------------
+else
+#---------------------------------------------------------------------------------
+	export LD	:=	$(CXX)
+#---------------------------------------------------------------------------------
+endif
+#---------------------------------------------------------------------------------
+
+export OFILES_SOURCES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(sFILES:.s=.o) $(SFILES:.S=.o)
+
+export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES)) $(addsuffix .o,$(TPLFILES))
+
+export OFILES		:=	$(OFILES_BIN) $(OFILES_SOURCES)
+
+export HFILES		:=	$(addsuffix .h,$(subst .,_,$(BINFILES))) \
+			$(addsuffix .h,$(subst .,_,$(TPLFILES)))
+
+export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+			-I$(CURDIR)/$(BUILD) \
+			-I$(LIBOGC_INC)
+
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
+			-L$(LIBOGC_LIB)
+
+.PHONY: all clean run
+
+#---------------------------------------------------------------------------------
+all: $(BUILD) $(DEPSDIR)
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(TOPDIR)/Makefile_wii
+
+$(BUILD):
+	@mkdir -p $@
+
+ifneq ($(DEPSDIR),$(BUILD))
+$(DEPSDIR):
+	@mkdir -p $@
+endif
+
+#---------------------------------------------------------------------------------
+clean:
+	@echo clean ...
+	@rm -fr $(BUILD) $(TARGET).dol $(TARGET).elf
+
+#---------------------------------------------------------------------------------
+run: $(BUILD)
+	wiiload $(OUTPUT).dol
+
+#---------------------------------------------------------------------------------
+else
+
+#---------------------------------------------------------------------------------
+# main targets
+#---------------------------------------------------------------------------------
+$(OUTPUT).dol: $(OUTPUT).elf
+
+$(OFILES_SOURCES): $(HFILES)
+
+$(OUTPUT).elf: $(OFILES)
+
+#---------------------------------------------------------------------------------
+# you need a rule like this for each extension you use as binary data
+#---------------------------------------------------------------------------------
+%.bin.o	%_bin.h: %.bin
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+#---------------------------------------------------------------------------------
+%.tpl.o	%_tpl.h: %.tpl
+#---------------------------------------------------------------------------------
+	@echo $(notdir $<)
+	@$(bin2o)
+
+-include $(DEPSDIR)/*.d
+
+#---------------------------------------------------------------------------------
+endif
+#---------------------------------------------------------------------------------
