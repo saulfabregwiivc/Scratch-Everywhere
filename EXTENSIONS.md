@@ -15,8 +15,7 @@ identical to normal Scratch extensions so for more detail, see
 
 ## Directory Structure
 
-The directory structure is pretty simple, it's just a directory with the
-extensions id within the extensions folder with a
-`extension.so`/`extension.rpl`/`extension.dll`/`extension.dylib` file.
+The directory structure is pretty simple, it's just a library inside of the
+extensions folder. The library is named the id of the extension.
 
 ## Extension Library
