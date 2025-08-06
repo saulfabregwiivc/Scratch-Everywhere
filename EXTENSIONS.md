@@ -12,42 +12,11 @@ identical to normal Scratch extensions so for more detail, see
 - Extension folder: The extension folder is `sdcard:/3ds/extensions` on 3DS,
   `sdcard:/wiiu/scratch-wiiu/extension` on Wii U, and `./extensions` on PC.
 - Extension library: The code or compiled library of a extension.
-- Extension config: The `extension.json` file of the extension.
 
 ## Directory Structure
 
 The directory structure is pretty simple, it's just a directory with the
-extensions id within the extensions folder with an `extension.json` file and a
+extensions id within the extensions folder with a
 `extension.so`/`extension.rpl`/`extension.dll`/`extension.dylib` file.
 
 ## Extension Library
-
-## `extension.json`
-
-This is equivalent to `getInfo` in normal Scratch extensions.
-
-### Root Structure
-
-- `blocks`: `Block[]` - An array of [block](#block-structure)s.
-- `menus` (optional): `{[id: string]: Menu}` - A list of menus usable as
-  [argument](#argument-structure)s.
-
-### Block Structure
-
-- `opcode`: `string`: The opcode of the block.
-- `type`: `"command" | "reporter" | "boolean" | "hat" | "event"`: The type/shape
-  the block is.
-- `arguments` (optional): `{[id: string]: Argument}`: The arguments of the
-  block.
-
-### Argument Structure
-
-- `type`: `"string" | "number" | "boolean" | "color" | "angle" | "dummy"` - The
-  type of the argument. The only key difference from normal Scratch extensions
-  is that `dummy` should be used instead of `image`.
-- `menu` (optional): `string` - The ID of a [menu](#menu-structure).
-
-### Menu Structure
-
-Menus of the type of `string[] | {string | number | boolean}[]`. This is roughly
-the same as the `items` option on normal Scratch extension menus.
