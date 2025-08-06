@@ -21,6 +21,11 @@ extern SDL_Point touchPosition;
 #define CONTROLLER_DEADZONE_Y 18000
 #define CONTROLLER_DEADZONE_TRIGGER 1000
 
+#ifdef ENABLE_CLOUDVARS
+extern std::string cloudUsername;
+extern bool cloudProject;
+#endif
+
 void Input::getInput() {
     inputButtons.clear();
     mousePointer.isPressed = false;
@@ -156,15 +161,30 @@ void Input::getInput() {
 
     // TODO: Add way to disable touch input (currently overrides mouse input.)
     if (SDL_GetNumTouchDevices() > 0) {
-        mousePointer.x = touchPosition.x - windowWidth / 2;
-        mousePointer.y = windowHeight / 2 - touchPosition.y;
+        // Transform touch coordinates to Scratch space
+        float scaleX = static_cast<float>(Scratch::projectWidth) / windowWidth;
+        float scaleY = static_cast<float>(Scratch::projectHeight) / windowHeight;
+
+        mousePointer.x = (touchPosition.x - windowWidth / 2) * scaleX;
+        mousePointer.y = (windowHeight / 2 - touchPosition.y) * scaleY;
         mousePointer.isPressed = touchActive;
         return;
     }
 
-    SDL_GetMouseState(&mousePointer.x, &mousePointer.y);
-    mousePointer.x -= windowWidth / 2;
-    mousePointer.y = (windowHeight / 2) - mousePointer.y;
+    // Get raw mouse coordinates
+    int rawMouseX, rawMouseY;
+    SDL_GetMouseState(&rawMouseX, &rawMouseY);
+
+    // Convert to window-centered coordinates
+    rawMouseX -= windowWidth / 2;
+    rawMouseY = (windowHeight / 2) - rawMouseY;
+
+    // Transform to Scratch project space
+    float scaleX = static_cast<float>(Scratch::projectWidth) / windowWidth;
+    float scaleY = static_cast<float>(Scratch::projectHeight) / windowHeight;
+
+    mousePointer.x = rawMouseX * scaleX;
+    mousePointer.y = rawMouseY * scaleY;
 
     Uint32 buttons = SDL_GetMouseState(NULL, NULL);
     if (buttons & (SDL_BUTTON(SDL_BUTTON_LEFT) | SDL_BUTTON(SDL_BUTTON_RIGHT))) {
@@ -173,6 +193,9 @@ void Input::getInput() {
 }
 
 std::string Input::getUsername() {
+#ifdef ENABLE_CLOUDVARS
+    if (cloudProject) return cloudUsername;
+#endif
 #ifdef __WIIU__
     int16_t miiName[256];
     nn::act::GetMiiName(miiName);
