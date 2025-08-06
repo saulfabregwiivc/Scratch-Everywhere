@@ -4,6 +4,10 @@
 #include "scratch/unzip.hpp"
 #include <chrono>
 
+#ifdef __OGC__
+#include <SDL2/SDL.h>
+#endif
+
 #ifdef ENABLE_CLOUDVARS
 #include "scratch/os.hpp"
 #include <mist/mist.hpp>
