@@ -29,7 +29,7 @@ This is equivalent to `getInfo` in normal Scratch extensions.
 ### Root Structure
 
 - `blocks`: `Block[]` - An array of [block](#block-structure)s.
-- `menus`: `{[id: string]: Menu}` - A list of menus usable as
+- `menus` (optional): `{[id: string]: Menu}` - A list of menus usable as
   [argument](#argument-structure)s.
 
 ### Block Structure
