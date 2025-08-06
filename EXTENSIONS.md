@@ -4,9 +4,6 @@ This is the documentation about the custom extension format. A lot of things are
 identical to normal Scratch extensions so for more detail, see
 [TurboWarp's Extension Docs](https://docs.turbowarp.org/development/extensions/introduction).
 
-> [!NOTE]
-> All types are in TypeScript syntax.
-
 ## Glossary
 
 - Extension folder: The extension folder is `sdcard:/3ds/extensions` on 3DS,
@@ -19,3 +16,13 @@ The directory structure is pretty simple, it's just a library inside of the
 extensions folder. The library is named the id of the extension.
 
 ## Extension Library
+
+The extension library is simply a ton of functions each representing a block.
+The functions return `std::any` and their only argument is
+`std::map<std::string, std::any> arguments`.
+
+## Examples
+
+See the
+[Scratch 3DS TurboWarp Extension Repository](https://github.com/gradylink/turbowarp-3ds-extensions)
+for examples.
