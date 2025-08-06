@@ -13,7 +13,7 @@
 #include <whb/sdcard.h>
 #endif
 
-#ifdef __PPC__
+#ifdef __OGC__
 #include <fat.h>
 #endif
 
@@ -47,7 +47,7 @@ bool Render::Init() {
     windowHeight = 480;
 #endif
 
-#ifdef __PPC__
+#ifdef __OGC__
     fatInitDefault();
     windowWidth = 640;
     windowHeight = 480;
