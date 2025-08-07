@@ -3,6 +3,7 @@
 #include "render.hpp"
 
 std::vector<Sprite *> sprites;
+std::vector<std::string> extensions;
 std::vector<Sprite> spritePool;
 std::vector<std::string> broadcastQueue;
 std::unordered_map<std::string, Block *> blockLookup;
@@ -541,6 +542,11 @@ void loadSprites(const nlohmann::json &json) {
     }
 
     Log::log("Loaded " + std::to_string(sprites.size()) + " sprites.");
+}
+
+void loadExtensions(const nlohmann::json &json) {
+    if (!json.contains("extensions")) return;
+    extensions = json["extensions"].get<std::vector<std::string>>();
 }
 
 Block *findBlock(std::string blockId) {

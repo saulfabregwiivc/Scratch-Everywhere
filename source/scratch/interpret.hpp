@@ -26,6 +26,7 @@ extern BlockExecutor executor;
 extern ProjectType projectType;
 
 extern std::vector<Sprite *> sprites;
+extern std::vector<std::string> extensions; // The name of every extension used in the project, extensions will be loaded on demand for now (very very not optimized but easier to implement).
 extern std::vector<Sprite> spritePool;
 extern std::vector<std::string> broadcastQueue;
 extern std::unordered_map<std::string, Block *> blockLookup;
@@ -57,6 +58,12 @@ std::vector<std::pair<double, double>> getCollisionPoints(Sprite *currentSprite)
  * @param json The file to load
  */
 void loadSprites(const nlohmann::json &json);
+
+/**
+ * Loads every custom extension from the Scratch's project.json file.
+ * @param json The file to load
+ */
+void loadExtensions(const nlohmann::json &json);
 
 /**
  * Frees every Sprite from memory.
