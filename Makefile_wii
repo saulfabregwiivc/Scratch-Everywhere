@@ -95,7 +95,7 @@ export LIBPATHS	:= -L$(LIBOGC_LIB)
 .PHONY: all clean run
 
 #---------------------------------------------------------------------------------
-all: $(BUILD) $(DEPSDIR)
+all: $(BUILD) $(DEPSDIR) $(TARGET).wbfs
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(TOPDIR)/Makefile_wii
 
 $(BUILD):
@@ -109,7 +109,7 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).dol $(TARGET).elf
+	@rm -fr $(BUILD) $(TARGET).dol $(TARGET).elf $(TARGET).wbfs
 
 #---------------------------------------------------------------------------------
 run: $(BUILD)
@@ -146,3 +146,14 @@ $(OUTPUT).elf: $(OFILES)
 #---------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------
+wbfs: $(TARGET).wbfs
+
+$(TARGET).wbfs: $(TARGET).dol
+	@echo "Building WBFS..."
+	@wit extract iso_template.iso temp_iso_dir
+	@cp $< temp_iso_dir/sys/main.dol
+	@wit copy temp_iso_dir $(@:.wbfs=.iso) --id=SCRATP --name="Scratch Wii" --common-key=0
+	@wit copy $(@:.wbfs=.iso) $@ --common-key=0
+	@rm -rf temp_iso_dir
+	@rm -f $(@:.wbfs=.iso)
+	@echo "WBFS created: $@"
