@@ -16,8 +16,14 @@ PKGCONF_WII	:=	$(DEVKITPRO)/portlibs/wii/bin/powerpc-eabi-pkg-config
 #---------------------------------------------------------------------------------
 # Application info
 #---------------------------------------------------------------------------------
+APP_TITLE	:= Scratch Wii
+APP_AUTHOR	:= NateXS
+APP_SHORT_DESCRIPTION := Play Scratch games on the Wii!
+APP_LONG_DESCRIPTION	:= Play Scratch games on the Wii!
+APP_VERSION	:= 0.16
+RELEASE_DATE := August 7, 2025
 TARGET		:=	$(notdir $(CURDIR))
-BUILD		:=	build
+BUILD		:=	build/wii
 SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
 DATA		:=	data
 INCLUDES	:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
@@ -45,10 +51,10 @@ CFLAGS	+=	-DENABLE_BUBBLES
 endif
 
 #---------------------------------------------------------------------------------
-ifneq ($(BUILD),$(notdir $(CURDIR)))
+ifneq ($(notdir $(BUILD)),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export OUTPUT	:=	$(CURDIR)/$(BUILD)/$(TARGET)
 export TOPDIR	:=	$(CURDIR)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
@@ -92,11 +98,11 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 
 export LIBPATHS	:= -L$(LIBOGC_LIB)
 
-.PHONY: all clean run
+.PHONY: all clean run package
 
 #---------------------------------------------------------------------------------
 all: $(BUILD) $(DEPSDIR)
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(TOPDIR)/Makefile_wii
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile_wii
 
 $(BUILD):
 	@mkdir -p $@
@@ -109,7 +115,7 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).dol $(TARGET).elf
+	@rm -fr build $(TARGET).dol $(TARGET).elf $(BUILD)/$(TARGET)-wii.zip
 
 #---------------------------------------------------------------------------------
 run: $(BUILD)
@@ -146,3 +152,26 @@ $(OUTPUT).elf: $(OFILES)
 #---------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------------
+# Package target - creates a zip file for distribution
+#---------------------------------------------------------------------------------
+package: all
+	@echo Packaging...
+	@rm -rf package
+	@mkdir -p package/apps/$(TARGET)
+	@cp $(BUILD)/$(TARGET).dol package/apps/$(TARGET)/boot.dol
+	@echo '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' > package/apps/$(TARGET)/meta.xml
+	@echo '<app version="$(APP_VERSION)">' >> package/apps/$(TARGET)/meta.xml
+	@echo '	<name>$(APP_TITLE)</name>' >> package/apps/$(TARGET)/meta.xml
+	@echo '	<coder>$(APP_AUTHOR)</coder>' >> package/apps/$(TARGET)/meta.xml
+	@echo '	<version>$(APP_VERSION)</version>' >> package/apps/$(TARGET)/meta.xml
+	@echo '	<release_date>$(RELEASE_DATE)</release_date>' >> package/apps/$(TARGET)/meta.xml
+	@echo '	<short_description>$(APP_SHORT_DESCRIPTION)</short_description>' >> package/apps/$(TARGET)/meta.xml
+	@echo '	<long_description>$(APP_LONG_DESCRIPTION)</long_description>' >> package/apps/$(TARGET)/meta.xml
+	@echo '</app>' >> package/apps/$(TARGET)/meta.xml
+	@if [ -f gfx/wii/icon.png ]; then cp gfx/wii/icon.png package/apps/$(TARGET)/icon.png; fi
+	@if [ -d gfx ]; then cp -r gfx package/apps/$(TARGET)/gfx; fi
+	@cd package && zip -r ../$(BUILD)/$(TARGET)-wii.zip apps/
+	@rm -rf package
+	@echo Package created: $(BUILD)/$(TARGET)-wii.zip
