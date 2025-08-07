@@ -16,15 +16,11 @@ PKGCONF_WII	:=	$(DEVKITPRO)/portlibs/wii/bin/powerpc-eabi-pkg-config
 #---------------------------------------------------------------------------------
 # Application info
 #---------------------------------------------------------------------------------
-APP_TITLE	:=	Scratch Wii
-APP_DESCRIPTION	:=	Play Scratch Games on the Wii!
-APP_AUTHOR	:=	NateXS
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
 DATA		:=	data
-INCLUDES	:=	$(LIBDIRS:%=%/include) include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
-GFX		:=	gfx
+INCLUDES	:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
 
 # Config Options
 ENABLE_CLOUDVARS	?=	0
@@ -42,7 +38,6 @@ ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	:=	-g $(MACHDEP) -Wl,-Map,$(notdir $*.map) \
 		-Wl,--gc-sections
 
-LIBDIRS	:=	$(LIBOGC) $(DEVKITPRO)/portlibs/wii
 LIBS	:=	`$(PREFIX)pkg-config --libs sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2`
 
 ifeq ($(ENABLE_BUBBLES),1)
@@ -57,7 +52,6 @@ export OUTPUT	:=	$(CURDIR)/$(TARGET)
 export TOPDIR	:=	$(CURDIR)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-			$(foreach dir,$(GFX),$(CURDIR)/$(dir)) \
 			$(foreach dir,$(DATA),$(CURDIR)/$(dir))
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
@@ -67,7 +61,6 @@ CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
-SCFFILES	:=	$(foreach dir,$(GFX),$(notdir $(wildcard $(dir)/*.scf)))
 TPLFILES	:=	$(SCFFILES:.scf=.tpl)
 
 #---------------------------------------------------------------------------------
@@ -94,12 +87,10 @@ export HFILES		:=	$(addsuffix .h,$(subst .,_,$(BINFILES))) \
 			$(addsuffix .h,$(subst .,_,$(TPLFILES)))
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
-			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
 			-I$(CURDIR)/$(BUILD) \
 			-I$(LIBOGC_INC)
 
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
-			-L$(LIBOGC_LIB)
+export LIBPATHS	:= -L$(LIBOGC_LIB)
 
 .PHONY: all clean run
 
