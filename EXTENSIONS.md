@@ -27,6 +27,17 @@ contains the types of each function. See the
 [Scratch 3DS TurboWarp Extension Repository](https://github.com/gradylink/turbowarp-3ds-extensions)
 for examples.
 
+## Limitations
+
+The current incomplete system currently has a ton of limitations, here are all
+of them:
+
+- No access to sprite data
+- No way to override anything
+- No way to make terminal blocks
+- No way to do custom rendering
+- No way to do anything on every tick
+
 ## Examples
 
 See the
