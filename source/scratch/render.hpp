@@ -38,24 +38,9 @@ class Render {
      * @return True if we should go to the next frame, False otherwise.
      */
     static bool checkFramerate() {
-#ifdef __OGC__
-        static u64 startTime = gettick();
-        u64 currentTime = gettick();
-        int elapsedTime = ticks_to_millisecs(currentTime - startTime);
-
-        if (elapsedTime >= (1000 / Scratch::FPS)) {
-            startTime = currentTime;
-            return true;
-        }
-        return false;
-#else
-        endTime = std::chrono::high_resolution_clock::now();
-        if (endTime - startTime >= std::chrono::milliseconds(1000 / Scratch::FPS)) {
-            startTime = std::chrono::high_resolution_clock::now();
-            return true;
-        }
-        return false;
-#endif
+        static Timer frameTimer;
+        int frameDuration = 1000 / Scratch::FPS;
+        return frameTimer.hasElapsedAndRestart(frameDuration);
     }
 
     enum RenderModes {

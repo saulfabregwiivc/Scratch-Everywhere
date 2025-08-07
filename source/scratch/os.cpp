@@ -36,3 +36,49 @@ void Log::logError(std::string message, bool printToScreen) {
 }
 void Log::writeToFile(std::string message, std::string filePath) {
 }
+
+// Wii and Gamecube Timer implementation
+#ifdef __OGC__
+
+Timer::Timer() {
+    Start();
+}
+
+void Timer::Start() {
+    startTime = gettick();
+}
+
+int Timer::getTimeMs() {
+    u64 currentTime = gettick();
+    return ticks_to_millisecs(currentTime - startTime);
+}
+
+// everyone else...
+#else
+Timer::Timer() {
+    Start();
+}
+
+void Timer::Start() {
+    startTime = std::chrono::high_resolution_clock::now();
+}
+
+int Timer::getTimeMs() {
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime);
+    return static_cast<int>(duration.count());
+}
+
+#endif
+
+bool Timer::hasElapsed(int milliseconds) {
+    return getTimeMs() >= milliseconds;
+}
+
+bool Timer::hasElapsedAndRestart(int milliseconds) {
+    if (hasElapsed(milliseconds)) {
+        Start();
+        return true;
+    }
+    return false;
+}

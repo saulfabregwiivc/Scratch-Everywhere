@@ -1,6 +1,11 @@
+#include <chrono>
 #include <iostream>
 #ifdef __3DS__
 #include <3ds.h>
+#endif
+#ifdef __OGC__
+#include <ogc/lwp_watchdog.h>
+#include <ogc/system.h>
 #endif
 #pragma once
 
@@ -98,3 +103,34 @@ void logWarning(std::string message, bool printToScreen = true);
 void logError(std::string message, bool printToScreen = true);
 void writeToFile(std::string message, std::string filePath);
 } // namespace Log
+
+class Timer {
+  private:
+#ifdef __OGC__
+    u64 startTime;
+#else
+    std::chrono::high_resolution_clock::time_point startTime;
+#endif
+
+  public:
+    Timer();
+    /**
+     * Starts the clock.
+     */
+    void Start();
+    /**
+     * Gets the amount of time passed in milliseconds.
+     * @return time passed (in ms)
+     */
+    int getTimeMs();
+    /**
+     * Checks if enough time, in milliseconds, has passed since the timer started.
+     * @return True if enough time has passed, False otherwise.
+     */
+    bool hasElapsed(int ms);
+    /**
+     * Checks if enough time, in milliseconds, has passed since the timer started, and automatically restarts if true.
+     * @return True if enough time has passed, False otherwise.
+     */
+    bool hasElapsedAndRestart(int ms);
+};
