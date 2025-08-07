@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHENFLAGCLICKED);
+    BlockExecutor::runAllBlocksByOpcode("event_whenflagclicked");
     BlockExecutor::timer = std::chrono::high_resolution_clock::now();
 
     while (Render::appShouldRun()) {

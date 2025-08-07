@@ -165,7 +165,7 @@ void loadSprites(const nlohmann::json &json) {
             Block newBlock;
             newBlock.id = id;
             if (data.contains("opcode")) {
-                newBlock.opcode = newBlock.stringToOpcode(data["opcode"].get<std::string>());
+                newBlock.opcode = data["opcode"].get<std::string>();
             }
             if (data.contains("next") && !data["next"].is_null()) {
                 newBlock.next = data["next"].get<std::string>();
@@ -217,7 +217,7 @@ void loadSprites(const nlohmann::json &json) {
             newSprite->blocks[newBlock.id] = newBlock; // add block
 
             // add custom function blocks
-            if (newBlock.opcode == newBlock.PROCEDURES_PROTOTYPE) {
+            if (newBlock.opcode == "procedures_prototype") {
                 CustomBlock newCustomBlock;
                 newCustomBlock.name = data["mutation"]["proccode"];
                 newCustomBlock.blockId = newBlock.id;
@@ -342,7 +342,7 @@ void loadSprites(const nlohmann::json &json) {
             newMonitor.mode = monitor.at("mode").get<std::string>();
 
         if (monitor.contains("opcode") && !monitor["opcode"].is_null())
-            newMonitor.opcode = Block::stringToOpcode(monitor.at("opcode").get<std::string>());
+            newMonitor.opcode = monitor.at("opcode").get<std::string>();
 
         if (monitor.contains("params") && monitor["params"].is_object()) {
             for (const auto &param : monitor["params"].items()) {
