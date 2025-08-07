@@ -24,6 +24,8 @@ SDL_Renderer *renderer = nullptr;
 
 Render::RenderModes Render::renderMode = Render::TOP_SCREEN_ONLY;
 std::vector<Monitor> Render::visibleVariables;
+std::chrono::_V2::system_clock::time_point Render::startTime = std::chrono::high_resolution_clock::now();
+std::chrono::_V2::system_clock::time_point Render::endTime = std::chrono::high_resolution_clock::now();
 
 // TODO: properly export these to input.cpp
 SDL_GameController *controller;
@@ -330,7 +332,7 @@ void MainMenu::init() {
 #ifdef __WIIU__
         errorText = "No Scratch projects found!\n Go download a Scratch project and put it\n in sdcard:/wiiu/scratch-wiiu!\nPress Start to exit.";
 #else
-        errorText = "No Scratch projects found!\n Go download a Scratch project and put it\n in the same folder as this executable!\nPress Start to exit.";
+        errorText = "No Scratch projects found! Start to exit";
 #endif
         errorTextInfo = createTextObject(errorText,
                                          windowWidth / 2, windowWidth / 2);

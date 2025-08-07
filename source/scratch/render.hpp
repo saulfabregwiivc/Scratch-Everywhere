@@ -1,12 +1,21 @@
 #pragma once
+#include "interpret.hpp"
 #include "sprite.hpp"
 #include "text.hpp"
 #include <chrono>
 #include <cmath>
 #include <vector>
 
+#ifdef __OGC__
+#include <ogc/lwp_watchdog.h>
+#include <ogc/system.h>
+#endif
+
 class Render {
   public:
+    static std::chrono::_V2::system_clock::time_point startTime;
+    static std::chrono::_V2::system_clock::time_point endTime;
+
     static bool Init();
 
     static void deInit();
@@ -23,6 +32,31 @@ class Render {
      * If `false`, the app should close.
      */
     static bool appShouldRun();
+
+    /**
+     * Returns whether or not enough time has passed to advance a frame.
+     * @return True if we should go to the next frame, False otherwise.
+     */
+    static bool checkFramerate() {
+#ifdef __OGC__
+        static u64 startTime = gettick();
+        u64 currentTime = gettick();
+        int elapsedTime = ticks_to_millisecs(currentTime - startTime);
+
+        if (elapsedTime >= (1000 / Scratch::FPS)) {
+            startTime = currentTime;
+            return true;
+        }
+        return false;
+#else
+        endTime = std::chrono::high_resolution_clock::now();
+        if (endTime - startTime >= std::chrono::milliseconds(1000 / Scratch::FPS)) {
+            startTime = std::chrono::high_resolution_clock::now();
+            return true;
+        }
+        return false;
+#endif
+    }
 
     enum RenderModes {
         TOP_SCREEN_ONLY,

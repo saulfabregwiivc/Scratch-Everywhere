@@ -29,8 +29,8 @@ u32 clrWhite = C2D_Color32f(1, 1, 1, 1);
 u32 clrBlack = C2D_Color32f(0, 0, 0, 1);
 u32 clrGreen = C2D_Color32f(0, 0, 1, 1);
 u32 clrScratchBlue = C2D_Color32(71, 107, 115, 255);
-std::chrono::_V2::system_clock::time_point startTime = std::chrono::high_resolution_clock::now();
-std::chrono::_V2::system_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+std::chrono::_V2::system_clock::time_point Render::startTime = std::chrono::high_resolution_clock::now();
+std::chrono::_V2::system_clock::time_point Render::endTime = std::chrono::high_resolution_clock::now();
 
 Render::RenderModes Render::renderMode = Render::TOP_SCREEN_ONLY;
 std::vector<Monitor> Render::visibleVariables;
