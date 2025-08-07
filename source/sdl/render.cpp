@@ -16,6 +16,9 @@
 #ifdef __OGC__
 #include <fat.h>
 #endif
+#ifdef WII
+#include <romfs-wii.h>
+#endif
 
 int windowWidth = 480;
 int windowHeight = 360;
@@ -53,6 +56,10 @@ bool Render::Init() {
     fatInitDefault();
     windowWidth = 640;
     windowHeight = 480;
+    if (romfsInit()) {
+        Log::logError("Failed to init romfs.");
+        return false;
+    }
 #endif
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);
@@ -85,6 +92,9 @@ void Render::deInit() {
     romfsExit();
     WHBUnmountSdCard();
     nn::act::Finalize();
+#endif
+#ifdef __OGC__
+    romfsExit();
 #endif
 }
 

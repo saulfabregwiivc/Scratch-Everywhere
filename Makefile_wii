@@ -27,6 +27,9 @@ BUILD		:=	build/wii
 SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
 DATA		:=	data
 INCLUDES	:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
+ROMFS		:=	romfs
+GRAPHICS	:=	gfx
+GFXBUILD	:=	$(ROMFS)/gfx
 
 # Config Options
 ENABLE_CLOUDVARS	?=	0
@@ -49,6 +52,13 @@ LIBS	:=	`$(PREFIX)pkg-config --libs sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype
 ifeq ($(ENABLE_BUBBLES),1)
 CFLAGS	+=	-DENABLE_BUBBLES
 endif
+
+# Include libromfs-wii support
+include $(DEVKITPRO)/portlibs/wii/share/romfs-wii.mk
+
+CFLAGS		+=	$(ROMFS_CFLAGS)
+CXXFLAGS	+=	$(ROMFS_CFLAGS)
+LIBS		+=	$(ROMFS_LIBS)
 
 #---------------------------------------------------------------------------------
 ifneq ($(notdir $(BUILD)),$(notdir $(CURDIR)))
@@ -87,7 +97,8 @@ export OFILES_SOURCES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(sFILES:.s=.o) $(S
 
 export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES)) $(addsuffix .o,$(TPLFILES))
 
-export OFILES		:=	$(OFILES_BIN) $(OFILES_SOURCES)
+# Add ROMFS object files
+export OFILES		:=	$(OFILES_BIN) $(OFILES_SOURCES) $(ROMFS_TARGET)
 
 export HFILES		:=	$(addsuffix .h,$(subst .,_,$(BINFILES))) \
 			$(addsuffix .h,$(subst .,_,$(TPLFILES)))
@@ -101,11 +112,15 @@ export LIBPATHS	:= -L$(LIBOGC_LIB)
 .PHONY: all clean run package
 
 #---------------------------------------------------------------------------------
-all: $(BUILD) $(DEPSDIR)
+all: $(BUILD) $(DEPSDIR) $(GFXBUILD)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile_wii
 
 $(BUILD):
 	@mkdir -p $@
+
+$(GFXBUILD):
+	@mkdir -p $@
+	@cp -r $(GRAPHICS)/* $@/
 
 ifneq ($(DEPSDIR),$(BUILD))
 $(DEPSDIR):
@@ -115,7 +130,7 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr build $(TARGET).dol $(TARGET).elf $(BUILD)/$(TARGET)-wii.zip
+	@rm -fr build $(TARGET).dol $(TARGET).elf $(BUILD)/$(TARGET)-wii.zip $(GFXBUILD)
 
 #---------------------------------------------------------------------------------
 run: $(BUILD)
@@ -171,7 +186,7 @@ package: all
 	@echo '	<long_description>$(APP_LONG_DESCRIPTION)</long_description>' >> package/apps/$(TARGET)/meta.xml
 	@echo '</app>' >> package/apps/$(TARGET)/meta.xml
 	@if [ -f gfx/wii/icon.png ]; then cp gfx/wii/icon.png package/apps/$(TARGET)/icon.png; fi
-	@if [ -d gfx ]; then cp -r gfx package/apps/$(TARGET)/gfx; fi
+	@if [ -d $(GFXBUILD) ]; then cp -r $(GFXBUILD) package/apps/$(TARGET)/gfx; fi
 	@cd package && zip -r ../$(BUILD)/$(TARGET)-wii.zip apps/
 	@rm -rf package
 	@echo Package created: $(BUILD)/$(TARGET)-wii.zip
