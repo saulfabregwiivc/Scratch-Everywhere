@@ -98,6 +98,9 @@ void Input::getInput() {
     if (SDL_GameControllerGetButton(controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_X)) {
         inputButtons.push_back("x");
         anyKeyPressed = true;
+#ifdef __OGC__ // SDL 'x' is the A button on a wii remote
+        mousePointer.isPressed = true;
+#endif
     }
     if (SDL_GameControllerGetButton(controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_Y)) {
         inputButtons.push_back("y");
