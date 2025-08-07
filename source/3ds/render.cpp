@@ -82,6 +82,7 @@ bool Render::Init() {
 }
 
 bool Render::appShouldRun() {
+    if (toExit) return false;
     return aptMainLoop();
 }
 

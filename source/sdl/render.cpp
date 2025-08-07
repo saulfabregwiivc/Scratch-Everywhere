@@ -269,12 +269,12 @@ void Render::renderVisibleVariables() {
 }
 
 bool Render::appShouldRun() {
+    if (toExit) return false;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
         case SDL_QUIT:
             return false;
-            break;
         case SDL_CONTROLLERDEVICEADDED:
             controller = SDL_GameControllerOpen(0);
             break;

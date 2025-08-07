@@ -152,9 +152,6 @@ int main(int argc, char **argv) {
             BlockExecutor::runBroadcasts();
             Render::renderSprites();
         }
-        if (toExit) {
-            break;
-        }
     }
 
     exitApp();
