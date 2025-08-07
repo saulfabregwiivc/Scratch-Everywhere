@@ -1,4 +1,4 @@
-# WII MAKEFILE
+# GAMECUBE MAKEFILE
 
 #---------------------------------------------------------------------------------
 .SUFFIXES:
@@ -9,21 +9,15 @@ $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>dev
 endif
 
 TOPDIR ?= $(CURDIR)
-include $(DEVKITPPC)/wii_rules
+include $(DEVKITPPC)/gamecube_rules
 
-PKGCONF_WII	:=	$(DEVKITPRO)/portlibs/wii/bin/powerpc-eabi-pkg-config
+PKGCONF_GAMECUBE	:=	$(DEVKITPRO)/portlibs/gamecube/bin/powerpc-eabi-pkg-config
 
 #---------------------------------------------------------------------------------
 # Application info
 #---------------------------------------------------------------------------------
-APP_TITLE	:= Scratch Wii
-APP_AUTHOR	:= NateXS
-APP_SHORT_DESCRIPTION := Play Scratch games on the Wii!
-APP_LONG_DESCRIPTION	:= Play Scratch games on the Wii!
-APP_VERSION	:= 0.16
-RELEASE_DATE := 20250807000000 # its YEAR-MONTH-DAY-TIME xxxx-xx-xx-xxxxxx
 TARGET		:=	$(notdir $(CURDIR))
-BUILD		:=	build/wii
+BUILD		:=	build/gamecube
 SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
 DATA		:=	data
 INCLUDES	:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
@@ -35,7 +29,7 @@ ENABLE_BUBBLES		?=	1
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-CFLAGS	:=	`$(PREFIX)pkg-config --cflags sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2` -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DWII -D__OGC__ -DSDL_BUILD -DCONSOLE -DMOUSE_INPUT
+CFLAGS	:=	`$(PREFIX)pkg-config --cflags sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2` -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DGAMECUBE -D__OGC__ -DSDL_BUILD -DCONSOLE -DMOUSE_INPUT
 
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -std=c++17 -fexceptions
 
@@ -67,7 +61,6 @@ CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 sFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
-TPLFILES	:=	$(SCFFILES:.scf=.tpl)
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -85,12 +78,11 @@ endif
 
 export OFILES_SOURCES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(sFILES:.s=.o) $(SFILES:.S=.o)
 
-export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES)) $(addsuffix .o,$(TPLFILES))
+export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES))
 
 export OFILES		:=	$(OFILES_BIN) $(OFILES_SOURCES)
 
-export HFILES		:=	$(addsuffix .h,$(subst .,_,$(BINFILES))) \
-			$(addsuffix .h,$(subst .,_,$(TPLFILES)))
+export HFILES		:=	$(addsuffix .h,$(subst .,_,$(BINFILES)))
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 			-I$(CURDIR)/$(BUILD) \
@@ -98,11 +90,11 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 
 export LIBPATHS	:= -L$(LIBOGC_LIB)
 
-.PHONY: all clean run package
+.PHONY: all clean run
 
 #---------------------------------------------------------------------------------
 all: $(BUILD) $(DEPSDIR)
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile_wii
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile_gamecube
 
 $(BUILD):
 	@mkdir -p $@
@@ -115,11 +107,11 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr build $(TARGET).dol $(TARGET).elf $(BUILD)/$(TARGET)-wii.zip
+	@rm -fr build $(TARGET).dol $(TARGET).elf
 
 #---------------------------------------------------------------------------------
 run: $(BUILD)
-	wiiload $(OUTPUT).dol
+	@echo "Built $(OUTPUT).dol"
 
 #---------------------------------------------------------------------------------
 else
@@ -134,15 +126,7 @@ $(OFILES_SOURCES): $(HFILES)
 $(OUTPUT).elf: $(OFILES)
 
 #---------------------------------------------------------------------------------
-# you need a rule like this for each extension you use as binary data
-#---------------------------------------------------------------------------------
 %.bin.o	%_bin.h: %.bin
-#---------------------------------------------------------------------------------
-	@echo $(notdir $<)
-	@$(bin2o)
-
-#---------------------------------------------------------------------------------
-%.tpl.o	%_tpl.h: %.tpl
 #---------------------------------------------------------------------------------
 	@echo $(notdir $<)
 	@$(bin2o)
@@ -152,26 +136,3 @@ $(OUTPUT).elf: $(OFILES)
 #---------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------
-
-#---------------------------------------------------------------------------------
-# Package target - creates a zip file for distribution
-#---------------------------------------------------------------------------------
-package: all
-	@echo Packaging...
-	@rm -rf package
-	@mkdir -p package/apps/$(TARGET)
-	@cp $(BUILD)/$(TARGET).dol package/apps/$(TARGET)/boot.dol
-	@echo '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' > package/apps/$(TARGET)/meta.xml
-	@echo '<app version="$(APP_VERSION)">' >> package/apps/$(TARGET)/meta.xml
-	@echo '	<name>$(APP_TITLE)</name>' >> package/apps/$(TARGET)/meta.xml
-	@echo '	<coder>$(APP_AUTHOR)</coder>' >> package/apps/$(TARGET)/meta.xml
-	@echo '	<version>$(APP_VERSION)</version>' >> package/apps/$(TARGET)/meta.xml
-	@echo '	<release_date>$(RELEASE_DATE)</release_date>' >> package/apps/$(TARGET)/meta.xml
-	@echo '	<short_description>$(APP_SHORT_DESCRIPTION)</short_description>' >> package/apps/$(TARGET)/meta.xml
-	@echo '	<long_description>$(APP_LONG_DESCRIPTION)</long_description>' >> package/apps/$(TARGET)/meta.xml
-	@echo '</app>' >> package/apps/$(TARGET)/meta.xml
-	@if [ -f gfx/wii/icon.png ]; then cp gfx/wii/icon.png package/apps/$(TARGET)/icon.png; fi
-	@if [ -d gfx ]; then cp -r gfx package/apps/$(TARGET)/gfx; fi
-	@cd package && zip -r ../$(BUILD)/$(TARGET)-wii.zip apps/
-	@rm -rf package
-	@echo Package created: $(BUILD)/$(TARGET)-wii.zip
