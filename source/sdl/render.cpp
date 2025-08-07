@@ -15,9 +15,7 @@
 
 #ifdef __OGC__
 #include <fat.h>
-#endif
-#ifdef WII
-#include <romfs-wii.h>
+#include <romfs-ogc.h>
 #endif
 
 int windowWidth = 480;

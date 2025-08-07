@@ -54,7 +54,7 @@ CFLAGS	+=	-DENABLE_BUBBLES
 endif
 
 # Include libromfs-wii support
-include $(DEVKITPRO)/portlibs/wii/share/romfs-wii.mk
+include $(DEVKITPRO)/portlibs/wii/share/romfs-ogc.mk
 
 CFLAGS		+=	$(ROMFS_CFLAGS)
 CXXFLAGS	+=	$(ROMFS_CFLAGS)

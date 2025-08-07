@@ -21,6 +21,9 @@ BUILD		:=	build/gamecube
 SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
 DATA		:=	data
 INCLUDES	:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
+ROMFS		:=	romfs
+GRAPHICS	:=	gfx
+GFXBUILD	:=	$(ROMFS)/gfx
 
 # Config Options
 ENABLE_CLOUDVARS	?=	0
@@ -43,6 +46,13 @@ LIBS	:=	`$(PREFIX)pkg-config --libs sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype
 ifeq ($(ENABLE_BUBBLES),1)
 CFLAGS	+=	-DENABLE_BUBBLES
 endif
+
+# Include libromfs-ogc support
+include $(DEVKITPRO)/portlibs/gamecube/share/romfs-ogc.mk
+
+CFLAGS		+=	$(ROMFS_CFLAGS)
+CXXFLAGS	+=	$(ROMFS_CFLAGS)
+LIBS		+=	$(ROMFS_LIBS)
 
 #---------------------------------------------------------------------------------
 ifneq ($(notdir $(BUILD)),$(notdir $(CURDIR)))
@@ -80,7 +90,8 @@ export OFILES_SOURCES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(sFILES:.s=.o) $(S
 
 export OFILES_BIN	:=	$(addsuffix .o,$(BINFILES))
 
-export OFILES		:=	$(OFILES_BIN) $(OFILES_SOURCES)
+# Add ROMFS object files
+export OFILES		:=	$(OFILES_BIN) $(OFILES_SOURCES) $(ROMFS_TARGET)
 
 export HFILES		:=	$(addsuffix .h,$(subst .,_,$(BINFILES)))
 
@@ -93,11 +104,15 @@ export LIBPATHS	:= -L$(LIBOGC_LIB)
 .PHONY: all clean run
 
 #---------------------------------------------------------------------------------
-all: $(BUILD) $(DEPSDIR)
+all: $(BUILD) $(DEPSDIR) $(GFXBUILD)
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile_gamecube
 
 $(BUILD):
 	@mkdir -p $@
+
+$(GFXBUILD):
+	@mkdir -p $@
+	@cp -r $(GRAPHICS)/* $@/
 
 ifneq ($(DEPSDIR),$(BUILD))
 $(DEPSDIR):
@@ -107,7 +122,7 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr build $(TARGET).dol $(TARGET).elf
+	@rm -fr build $(TARGET).dol $(TARGET).elf $(GFXBUILD)
 
 #---------------------------------------------------------------------------------
 run: $(BUILD)
