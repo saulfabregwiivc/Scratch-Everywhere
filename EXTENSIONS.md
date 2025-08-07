@@ -18,8 +18,14 @@ extensions folder. The library is named the id of the extension.
 ## Extension Library
 
 The extension library is simply a ton of functions each representing a block.
-The functions return `std::any` and their only argument is
-`std::map<std::string, std::any> arguments`.
+The functions returns `void`, `bool`, or `int` and their only argument is
+`std::map<std::string, std::any> arguments` or if they need to return a string
+they accept a `std::string*` which the string is put into.
+
+Along with the library there should also be a json file with the same name which
+contains the types of each function. See the
+[Scratch 3DS TurboWarp Extension Repository](https://github.com/gradylink/turbowarp-3ds-extensions)
+for examples.
 
 ## Examples
 
