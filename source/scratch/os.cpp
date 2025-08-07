@@ -41,10 +41,10 @@ void Log::writeToFile(std::string message, std::string filePath) {
 #ifdef __OGC__
 
 Timer::Timer() {
-    Start();
+    start();
 }
 
-void Timer::Start() {
+void Timer::start() {
     startTime = gettick();
 }
 
@@ -56,10 +56,10 @@ int Timer::getTimeMs() {
 // everyone else...
 #else
 Timer::Timer() {
-    Start();
+    start();
 }
 
-void Timer::Start() {
+void Timer::start() {
     startTime = std::chrono::high_resolution_clock::now();
 }
 
@@ -77,7 +77,7 @@ bool Timer::hasElapsed(int milliseconds) {
 
 bool Timer::hasElapsedAndRestart(int milliseconds) {
     if (hasElapsed(milliseconds)) {
-        Start();
+        start();
         return true;
     }
     return false;

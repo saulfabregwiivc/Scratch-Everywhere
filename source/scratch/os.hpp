@@ -117,7 +117,7 @@ class Timer {
     /**
      * Starts the clock.
      */
-    void Start();
+    void start();
     /**
      * Gets the amount of time passed in milliseconds.
      * @return time passed (in ms)
