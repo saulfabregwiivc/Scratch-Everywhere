@@ -349,9 +349,18 @@ void MainMenu::render() {
 
     // use scratch input instead of direct SDL input because uhhhh lazy 😁
     Input::getInput();
-    bool upPressed = std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "up arrow") != Input::inputButtons.end() && Input::keyHeldFrames < 2;
-    bool downPressed = std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "down arrow") != Input::inputButtons.end() && Input::keyHeldFrames < 2;
-    bool aPressed = std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "a") != Input::inputButtons.end() && Input::keyHeldFrames < 2;
+    bool upPressed = (std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "up arrow") != Input::inputButtons.end() ||
+                      std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "g") != Input::inputButtons.end()) &&
+                     Input::keyHeldFrames < 2;
+
+    bool downPressed = (std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "down arrow") != Input::inputButtons.end() ||
+                        std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "j") != Input::inputButtons.end()) &&
+                       Input::keyHeldFrames < 2;
+
+    bool aPressed = (std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "a") != Input::inputButtons.end() ||
+                     std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "x") != Input::inputButtons.end()) &&
+                    Input::keyHeldFrames < 2;
+
     bool startPressed = std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "1") != Input::inputButtons.end() && Input::keyHeldFrames < 2;
 
     if (hasProjects) {
