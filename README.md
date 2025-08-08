@@ -1,5 +1,5 @@
 # Scratch-3DS
-A W.I.P. runtime made in C++ aimed to bring any Scratch 3 project over to the Nintendo 3DS and Wii U.
+A W.I.P. runtime made in C++ aimed to bring any Scratch 3 project over to the Nintendo 3DS, Wii U, Wii and Gamecube.
 
 ![Software running a simple Scratch Project](https://raw.githubusercontent.com/NateXS/Scratch-3DS/refs/heads/main/scratchcats3ds.gif)
 
@@ -113,7 +113,7 @@ Download the .3dsx file in the Releases tab or [nightly build](https://nightly.l
 Then it should be as simple as opening the homebrew launcher on your 3DS and running the app!
 
 ### Get up and running for Wii U
-Download the .zip file in the Releases tab or [nightly build](https://nightly.link/NateXS/Scratch-3DS/workflows/nightly-wiiu/main/Scratch%20Wii%20U%20Nightly.zip).
+Download the scratch-wiiu.zip file in the Releases tab or [nightly build](https://nightly.link/NateXS/Scratch-3DS/workflows/nightly-wiiu/main/Scratch%20Wii%20U%20Nightly.zip).
 
 Unzip the file in your `sdcard:/wiiu/apps/` folder.
 
@@ -123,17 +123,38 @@ Place the scratch projects you want in `sdcard:/wiiu/scratch-wiiu/`
 
 Then it should be as simple as opening the app on your Wii U!
 
-### Building
+### Get up and running for Wii
+Download the scratch-wii.zip file in the Releases tab.
+
+Unzip the file and put the `apps` folder inside of the root of your SD card.
+
+Place the Scratch projects you want in `sdcard:/apps/scratch-wii/`
+
+Then it should be as simple as opening the app in the Homebrew Menu on your Wii!
+
+### Get up and running for Gamecube
+Download the scratch-gamecube.zip file in the Releases tab.
+
+Unzip the file. Put your Scratch projects in the same place you put your .dol file.
+
+Then it should be as simple as opening the app on your Gamecube!
+
+## Building
 
 In order to embed a Scratch project in the executable, you'll need to compile the source code.
 
 If you would like to change the name of the app or any other information you can edit one of the Makefiles.
 - For the 3DS you need to edit `Makefile_3ds` and change `APP_TITLE`, `APP_DESCRIPTION` and `APP_AUTHOR` to whatever you please.
 - For the Wii U you need to edit `Makefile_wiiu` and change `APP_NAME`, `APP_SHORT_DESCRIPTION`, `APP_LONG_DESCRIPTION` and `APP_AUTHOR` to whatever you please.
+- For the Wii you need to edit `Makefile_wii` and change anything under `Application Info` to whatever you please.
 
 #### Docker
 
-The recommended way to compile Scratch 3DS is with Docker. To compile with Docker all you need installed is Docker and Buildx. To compile for the 3DS run `docker build -f Dockerfile.3ds --target exporter -o . .`. To compile for the Wii U run `docker build -f Dockerfile.wiiu --target exporter -o . .`
+The recommended way to compile Scratch 3DS is with Docker. To compile with Docker all you need installed is Docker and Buildx.
+
+To compile for the 3DS run `docker build -f Dockerfile.3ds --target exporter -o . .`
+
+To compile for the Wii U run `docker build -f Dockerfile.wiiu --target exporter -o . .`
 
 #### Manual
 
@@ -141,6 +162,8 @@ For 3DS and Wii U, you will need to have Devkitpro's SDKs, [Mist++](https://gith
 - For the 3DS you will need the DevkitARM toolchain and libctru.
 - - You will also need a 3DS compiled version of SDL2 and SDL2_mixer. See the [Nightly Build commands](https://github.com/NateXS/Scratch-3DS/blob/main/.github/workflows/nightly-3ds.yml) for a reference on how to compile SDL2 3DS for yourself.
 - For the Wii U you will need the DevkitPPC toolchain, WUT, all SDL2-wiiu libraries, and libromfs-wiiu.
+- For the Wii you need the DevkitPPC toolchain, libogc, all SDL2-wii libraries, and [libromfs-ogc.](https://github.com/NateXS/libromfs-ogc)
+- For the Gamecube you need the DevkitPPC toolchain, libogc, all SDL2-gamecube libraries, and [libromfs-ogc.](https://github.com/NateXS/libromfs-ogc)
 
 - Devkitpro's install instructions are available at : https://devkitpro.org/wiki/Getting_Started
 
@@ -153,6 +176,8 @@ Make a `romfs` folder inside the unzipped source code and put the Scratch projec
 Then you need to compile the projects into proper Homebrew packages.
 - For the 3DS you simply need to run `make`. Then copy the `Scratch-3DS.3dsx` file like you normally would.
 - For the Wii U you need to run `make PLATFORM=wiiu all package` and then copy the `build/wiiu/scratch-wiiu` folder into the `sdcard:/wiiu/apps` folder on your sd card.
+- For the Wii you need to run `make PLATFORM=wii package`, then find the zipped file in `build/wii/scratch-wii.zip`. Unzip it and put the `apps` folder inside the root of your Wii SD card.
+- For the Gamecube you need to run `make PLATFORM=gamecube`, then find the .dol file at `build/gamecube/scratch-gamecube.dol`.
 
 #### Compilation Flags
 
