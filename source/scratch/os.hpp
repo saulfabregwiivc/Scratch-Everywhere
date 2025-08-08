@@ -14,10 +14,12 @@ class MemoryTracker {
     static size_t totalAllocated;
     static size_t peakUsage;
     static size_t allocationCount;
-    const static size_t old3ds_maxRamUsage = 50331648;  // 48 MB
-    const static size_t new3ds_maxRamUsage = 100663296; // 96 MB
-    const static size_t wiiu_maxRamUsage = 805306368;   // 768 MB
-    const static size_t pc_maxRamUsage = 1073741824;    // 1 GB
+    const static size_t old3ds_maxRamUsage = 50331648;   // 48 MB
+    const static size_t new3ds_maxRamUsage = 100663296;  // 96 MB
+    const static size_t wiiu_maxRamUsage = 805306368;    // 768 MB
+    const static size_t wii_maxRamUsage = 86900736;      // 83 MB
+    const static size_t gamecube_maxRamUsage = 23068672; // 22 MB
+    const static size_t pc_maxRamUsage = 1073741824;     // 1 GB
 
   public:
     static size_t getMaxRamUsage() {
@@ -31,7 +33,12 @@ class MemoryTracker {
 #endif
 #ifdef __WIIU__
         return wiiu_maxRamUsage;
-
+#endif
+#ifdef WII
+        return wii_maxRamUsage;
+#endif
+#ifdef GAMECUBE
+        return gamecube_maxRamUsage;
 #endif
         return pc_maxRamUsage;
     }
