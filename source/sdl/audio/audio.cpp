@@ -225,12 +225,17 @@ bool SoundPlayer::loadSoundFromSB3(Sprite *sprite, mz_zip_archive *zip, const st
     return false;
 }
 
-bool SoundPlayer::loadSoundFromFile(Sprite *sprite, const std::string &fileName, const bool &streamed) {
+bool SoundPlayer::loadSoundFromFile(Sprite *sprite, std::string fileName, const bool &streamed) {
     Log::log("Loading audio from file: " + fileName);
 
     // Check if file has supported extension
     std::string lowerFileName = fileName;
     std::transform(lowerFileName.begin(), lowerFileName.end(), lowerFileName.begin(), ::tolower);
+
+#if defined(__WIIU__) || defined(__OGC__)
+    std::string romfsExt = "romfs:/";
+    fileName = romfsExt + fileName;
+#endif
 
     bool isSupported = false;
     if (lowerFileName.size() >= 4) {
