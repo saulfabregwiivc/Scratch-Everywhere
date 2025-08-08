@@ -71,6 +71,10 @@ void SoundPlayer::startSoundLoaderThread(Sprite *sprite, mz_zip_archive *zip, co
         .soundId = soundId,
         .streamed = sprite->isStage}; // stage sprites get streamed audio
 
+#ifdef __OGC__
+    params->streamed = false; // streamed sounds crash on wii
+#endif
+
 // do 3DS threads so it can actually run in the background
 #ifdef __3DS__
     s32 mainPrio = 0;
