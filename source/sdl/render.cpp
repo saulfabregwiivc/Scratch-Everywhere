@@ -157,7 +157,7 @@ void Render::renderSprites() {
         }
         if (!legacyDrawing) {
             SDL_Image *image = imgFind->second;
-            image->freeTimer = 240;
+            image->freeTimer = image->maxFreeTime;
             SDL_RendererFlip flip = SDL_FLIP_NONE;
 
             image->setScale((currentSprite->size * 0.01) * scale / 2.0f);
