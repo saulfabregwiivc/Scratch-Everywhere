@@ -104,16 +104,16 @@ There are 2 methods to install the runtime.
 
 ### Get up and running for 3DS
 
-Download the .3dsx file in the Releases tab or [nightly build](https://nightly.link/NateXS/Scratch-3DS/workflows/nightly-3ds/main/Scratch%203DS%20Nightly.zip).
+Download the `.3dsx `file in the Releases tab or [nightly build](https://nightly.link/NateXS/Scratch-3DS/workflows/nightly-3ds/main/Scratch%203DS%20Nightly.zip).
 
-- Place the .3dsx file in the `3ds/` folder of your 3DS SD card, along with any Scratch projects you want to run.
+- Place the `.3dsx` file in the `3ds/` folder of your 3DS SD card, along with any Scratch projects you want to run.
 > [!NOTE]
 > Scratch 3DS is also on Universal Updater, so you can just download it there and keep it updated that way!
 
 Then it should be as simple as opening the homebrew launcher on your 3DS and running the app!
 
 ### Get up and running for Wii U
-Download the scratch-wiiu.zip file in the Releases tab or [nightly build](https://nightly.link/NateXS/Scratch-3DS/workflows/nightly-wiiu/main/Scratch%20Wii%20U%20Nightly.zip).
+Download the `scratch-wiiu.zip` file in the Releases tab or [nightly build](https://nightly.link/NateXS/Scratch-3DS/workflows/nightly-wiiu/main/Scratch%20Wii%20U%20Nightly.zip).
 
 Unzip the file in your `sdcard:/wiiu/apps/` folder.
 
@@ -124,7 +124,7 @@ Place the scratch projects you want in `sdcard:/wiiu/scratch-wiiu/`
 Then it should be as simple as opening the app on your Wii U!
 
 ### Get up and running for Wii
-Download the scratch-wii.zip file in the Releases tab.
+Download the `scratch-wii.zip` file in the Releases tab or [nightly build](https://nightly.link/NateXS/Scratch-3DS/workflows/nightly-wii/main/Scratch%20Wii%20Nightly.zip).
 
 Unzip the file and put the `apps` folder inside of the root of your SD card.
 
@@ -133,7 +133,7 @@ Place the Scratch projects you want in `sdcard:/apps/scratch-wii/`
 Then it should be as simple as opening the app in the Homebrew Menu on your Wii!
 
 ### Get up and running for Gamecube
-Download the scratch-gamecube.zip file in the Releases tab.
+Download the `scratch-gamecube.zip` file in the Releases tab.
 
 Unzip the file. Put your Scratch projects in the same place you put your .dol file.
 
@@ -156,9 +156,11 @@ To compile for the 3DS run `docker build -f Dockerfile.3ds --target exporter -o 
 
 To compile for the Wii U run `docker build -f Dockerfile.wiiu --target exporter -o . .`
 
+To compile for the Wii run `docker build -f Dockerfile.wii --target exporter -o . .`
+
 #### Manual
 
-For 3DS and Wii U, you will need to have Devkitpro's SDKs, [Mist++](https://github.grady.link/mistpp), and a modified version of libcurl (instructions in mistpp-packages repo) installed.
+If you are compiling with cloud variables, you will need to have Devkitpro's SDKs, [Mist++](https://github.grady.link/mistpp), and a modified version of libcurl (instructions in mistpp-packages repo) installed.
 - For the 3DS you will need the DevkitARM toolchain and libctru.
 - - You will also need a 3DS compiled version of SDL2 and SDL2_mixer. See the [Nightly Build commands](https://github.com/NateXS/Scratch-3DS/blob/main/.github/workflows/nightly-3ds.yml) for a reference on how to compile SDL2 3DS for yourself.
 - For the Wii U you will need the DevkitPPC toolchain, WUT, all SDL2-wiiu libraries, and libromfs-wiiu.
