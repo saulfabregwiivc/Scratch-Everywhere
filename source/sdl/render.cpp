@@ -48,9 +48,9 @@ bool Render::Init() {
     nn::act::Initialize();
     windowWidth = 854;
     windowHeight = 480;
-#endif
+#elif defined(__OGC__)
+    SYS_STDIO_Report(true);
 
-#ifdef __OGC__
     fatInitDefault();
     windowWidth = 640;
     windowHeight = 480;
