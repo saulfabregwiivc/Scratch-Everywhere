@@ -1,4 +1,5 @@
 #include "interpret.hpp"
+#include "input.hpp"
 #include "os.hpp"
 #include "render.hpp"
 
@@ -540,6 +541,7 @@ void loadSprites(const nlohmann::json &json) {
         }
     }
 
+    Input::applyControls();
     Log::log("Loaded " + std::to_string(sprites.size()) + " sprites.");
 }
 

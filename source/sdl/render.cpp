@@ -314,6 +314,8 @@ void LoadingScreen::cleanup() {
 
 void MainMenu::init() {
 
+    Input::applyControls();
+
     std::vector<std::string> projectFiles;
 #ifdef __WIIU__
     projectFiles = Unzip::getProjectFiles(std::string(WHBGetSdCardMountPath()) + "/wiiu/scratch-wiiu/");

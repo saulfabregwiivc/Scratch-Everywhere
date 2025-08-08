@@ -6,7 +6,7 @@ A W.I.P. runtime made in C++ aimed to bring any Scratch 3 project over to the Ni
 ## Controls
 ![Controls](https://raw.githubusercontent.com/NateXS/Scratch-3DS/refs/heads/main/scratch%203ds%20controls.png)
 [3DS] Glide your finger/stylus on the bottom screen to move the mouse, and tap the bottom screen to click.
-[Wii U] To use the mouse you must enter mouse mode by holding L. Use the D-pad to move the mouse, and press R to click.
+[Wii U] To use the mouse you can either enter mouse mode by holding L, use the D-pad to move the mouse, and press R to click or use the touch screen on the Wii U Gamepad.
 
 ### Other Plaforms
 
