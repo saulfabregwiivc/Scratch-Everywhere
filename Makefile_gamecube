@@ -16,7 +16,7 @@ PKGCONF_GAMECUBE	:=	$(DEVKITPRO)/portlibs/gamecube/bin/powerpc-eabi-pkg-config
 #---------------------------------------------------------------------------------
 # Application info
 #---------------------------------------------------------------------------------
-TARGET		:=	$(notdir $(CURDIR))
+TARGET		:=	scratch-gamecube
 BUILD		:=	build/gamecube
 SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
 DATA		:=	data
