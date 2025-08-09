@@ -1,8 +1,10 @@
 #include "scratch/blockExecutor.hpp"
+#include "scratch/extension.hpp"
 #include "scratch/input.hpp"
 #include "scratch/render.hpp"
 #include "scratch/unzip.hpp"
 #include <chrono>
+#include <dlfcn.h>
 
 #ifdef ENABLE_CLOUDVARS
 #include "scratch/os.hpp"
@@ -29,6 +31,10 @@ std::unique_ptr<MistConnection> cloudConnection = nullptr;
 
 static void exitApp() {
     Render::deInit();
+
+    // Close Extension Libraries
+    for (auto extension : extensions)
+        dlclose(extension.handle);
 }
 
 static bool initApp() {
@@ -144,7 +150,7 @@ int main(int argc, char **argv) {
 #ifdef ENABLE_CLOUDVARS
     if (cloudProject && !projectJSON.empty()) initMist();
 #endif
-  
+
     BlockExecutor::runAllBlocksByOpcode("event_whenflagclicked");
 
     BlockExecutor::timer = std::chrono::high_resolution_clock::now();

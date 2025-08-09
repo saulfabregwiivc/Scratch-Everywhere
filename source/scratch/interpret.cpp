@@ -3,6 +3,7 @@
 #include "os.hpp"
 #include "render.hpp"
 #include "unzip.hpp"
+#include <dlfcn.h>
 #include <fstream>
 #include <iterator>
 
@@ -556,18 +557,38 @@ void loadExtensions(const nlohmann::json &json) {
     if (!json.contains("extensions")) return;
 
     const std::vector<std::string> extensionNames = json["extensions"].get<std::vector<std::string>>();
-    std::transform(extensionNames.begin(), extensionNames.end(), std::back_inserter(extensions), [](const std::string &name) {
+    for (const auto &name : extensionNames) {
 #ifdef __WIIU__
-        std::ostringstream typesFilenameStream;
-        typesFilenameStream << WHBGetSdCardMountPath() << "/wiiu/scratch-wiiu/extensions" << name << ".json";
-        const std::string typesFilename = typesFilenameStream.str();
+        std::ostringstream extensionsPrefixStream;
+        extensionsPrefixStream << WHBGetSdCardMountPath() << "/wiiu/scratch-wiiu/extensions/";
+        const std::string extensionsPrefix = extensionsPrefixStream.str();
 #else
-        const std::string typesFilename = "extensions/" + name + ".json";
+        const std::string extensionsPrefix = "";
 #endif
-        std::ifstream f(typesFilename);
+
+        std::ifstream f(extensionsPrefix + name + ".json");
+        if (!f.is_open()) continue;
         nlohmann::json typesJSON = nlohmann::json::parse(f);
-        return (struct Extension){name, typesJSON, nullptr};
-    });
+
+#ifdef __WIIU__
+        const std::string libExt = ".rpl";
+#elif defined(__WIN32__) || defined(WIN32) || defined(_WIN32) || defined(__NT__) // Don't you just love Windows...
+        const std::string libExt = ".dll";
+#elif defined(__APPLE__)
+        const std::string libExt = ".dylib";
+#elif defined(__3DS__) || defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
+        const std::string libExt = ".so";
+#else
+#error Unsupported Platform
+#endif
+
+        void *handle = dlopen((extensionsPrefix + name + libExt).c_str(), RTLD_LAZY);
+        if (!handle) {
+            Log::logError("Failed to load extension library: extensions/" + name + libExt + ", dlerror: " + dlerror());
+            continue;
+        }
+        extensions.push_back((struct Extension){name, typesJSON, handle});
+    }
 
     executor.registerExtensionHandlers();
 }
