@@ -118,7 +118,7 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
     bool isSVG = false;
     double screenOffset = (bottom && Render::renderMode != Render::BOTTOM_SCREEN_ONLY) ? -SCREEN_HEIGHT : 0;
     bool imageLoaded = false;
-    for (Image::ImageRGBA rgba : Image::imageRGBAS) {
+    for (imageRGBA rgba : imageRGBAS) {
         if (rgba.name == costumeId) {
 
             if (rgba.isSVG) isSVG = true;
@@ -128,10 +128,10 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
 
             if (imageC2Ds.find(costumeId) == imageC2Ds.end() || image->tex == nullptr || image->subtex == nullptr) {
 
-                auto rgbaFind = std::find_if(Image::imageRGBAS.begin(), Image::imageRGBAS.end(),
-                                             [&](const Image::ImageRGBA &rgba) { return rgba.name == costumeId; });
+                auto rgbaFind = std::find_if(imageRGBAS.begin(), imageRGBAS.end(),
+                                             [&](const imageRGBA &rgba) { return rgba.name == costumeId; });
 
-                if (rgbaFind != Image::imageRGBAS.end()) {
+                if (rgbaFind != imageRGBAS.end()) {
                     imageLoaded = queueC2DImage(*rgbaFind);
                 } else {
                     imageLoaded = false;
@@ -558,7 +558,7 @@ void Render::deInit() {
             free((Tex3DS_SubTexture *)data.image.subtex);
         }
     }
-    Image::imageRGBAS.clear();
+    imageRGBAS.clear();
     SoundPlayer::cleanupAudio();
     SDL_Quit();
     romfsExit();
