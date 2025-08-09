@@ -4,6 +4,8 @@
 #include "os.hpp"
 #include "render.hpp"
 #include "unzip.hpp"
+#include <cerrno>
+#include <cstring>
 #include <dlfcn.h>
 #include <fstream>
 #include <iterator>
@@ -564,11 +566,14 @@ void loadExtensions(const nlohmann::json &json) {
         extensionsPrefixStream << WHBGetSdCardMountPath() << "/wiiu/scratch-wiiu/extensions/";
         const std::string extensionsPrefix = extensionsPrefixStream.str();
 #else
-        const std::string extensionsPrefix = "";
+        const std::string extensionsPrefix = "extensions/";
 #endif
 
         std::ifstream f(extensionsPrefix + name + ".json");
-        if (!f.is_open()) continue;
+        if (!f.is_open()) {
+            Log::logError("Failed to load extension types: " + extensionsPrefix + name + ".json: " + strerror(errno) + ", " + std::to_string(errno));
+            continue;
+        }
         nlohmann::json typesJSON = nlohmann::json::parse(f);
 
 #ifdef __APPLE__
@@ -581,7 +586,7 @@ void loadExtensions(const nlohmann::json &json) {
 
         void *handle = dlopen((extensionsPrefix + name + libExt).c_str(), RTLD_LAZY);
         if (!handle) {
-            Log::logError("Failed to load extension library: extensions/" + name + libExt + ", dlerror: " + dlerror());
+            Log::logError("Failed to load extension library: " + extensionsPrefix + name + libExt + ", dlerror: " + dlerror());
             continue;
         }
         extensions.push_back((struct Extension){name, typesJSON, handle});
