@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 #endif
 
     BlockExecutor::runAllBlocksByOpcode(Block::EVENT_WHENFLAGCLICKED);
-    BlockExecutor::timer = std::chrono::high_resolution_clock::now();
+    BlockExecutor::timer.start();
 
     while (Render::appShouldRun()) {
         if (Render::checkFramerate()) {
