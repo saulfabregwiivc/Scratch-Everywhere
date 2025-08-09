@@ -93,7 +93,7 @@ As this is in a very W.I.P state, you will encounter many bugs, crashes, and thi
 ### Wii U
 
 - Dual screen support
-- Improved controller support (multiple controllers, Wii Remotes)
+- Improved controller support (multiple controllers)
 
 ### Wii
 - Cloud Variable support
