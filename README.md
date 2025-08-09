@@ -133,7 +133,7 @@ Place the Scratch projects you want in `sdcard:/apps/scratch-wii/`
 Then it should be as simple as opening the app in the Homebrew Menu on your Wii!
 
 ### Get up and running for Gamecube
-Download the `scratch-gamecube.zip` file in the Releases tab.
+Download the `scratch-gamecube.zip` file in the Releases tab or [nightly build](https://nightly.link/NateXS/Scratch-3DS/workflows/nightly-gamecube/main/Scratch%20GameCube%20Nightly.zip).
 
 Unzip the file. Put your Scratch projects in the same place you put your .dol file.
 
