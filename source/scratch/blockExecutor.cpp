@@ -158,8 +158,14 @@ void BlockExecutor::registerHandlers() {
 }
 
 void BlockExecutor::registerExtensionHandlers() {
-    for (const auto &extension : extensions) {
-    }
+    for (const auto &extension : extensions)
+        for (const auto &[opcode, type] : extension.types.items()) {
+            if (type == "void") continue; // TODO: Implement normal blocks.
+            valueHandlers[opcode] = [](Block &block, Sprite *sprite) -> Value {
+                Log::log(block.opcode);
+                return Value();
+            };
+        }
 }
 
 std::vector<Block *> BlockExecutor::runBlock(Block &block, Sprite *sprite, bool *withoutScreenRefresh, bool fromRepeat) {
