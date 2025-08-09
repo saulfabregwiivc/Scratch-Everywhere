@@ -570,23 +570,16 @@ void loadExtensions(const nlohmann::json &json) {
         if (!f.is_open()) continue;
         nlohmann::json typesJSON = nlohmann::json::parse(f);
 
-#ifdef __WIIU__
-        const std::string libExt = ".rpl";
-#elif defined(__WIN32__) || defined(WIN32) || defined(_WIN32) || defined(__NT__) // Don't you just love Windows...
-        const std::string libExt = ".dll";
-#elif defined(__APPLE__)
-        const std::string libExt = ".dylib";
-#elif defined(__3DS__) || defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
-        const std::string libExt = ".so";
-#else
-#error Unsupported Platform
-#endif
-
-        void *handle = dlopen((extensionsPrefix + name + libExt).c_str(), RTLD_LAZY);
+#if defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
+        void *handle = dlopen((extensionsPrefix + name + ".so").c_str(), RTLD_LAZY);
         if (!handle) {
             Log::logError("Failed to load extension library: extensions/" + name + libExt + ", dlerror: " + dlerror());
             continue;
         }
+#else
+#error Unsupported Platform
+#endif
+
         extensions.push_back((struct Extension){name, typesJSON, handle});
     }
 
