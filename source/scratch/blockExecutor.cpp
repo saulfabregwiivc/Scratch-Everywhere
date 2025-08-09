@@ -8,6 +8,10 @@
 #include "blocks/procedure.hpp"
 #include "blocks/sensing.hpp"
 #include "blocks/sound.hpp"
+#include "extension.hpp"
+#include "interpret.hpp"
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 #ifdef ENABLE_CLOUDVARS
 #include <mist/mist.hpp>
@@ -151,6 +155,11 @@ void BlockExecutor::registerHandlers() {
     handlers["procedures_definition"] = ProcedureBlocks::definition;
     valueHandlers["argument_reporter_string_number"] = ProcedureBlocks::stringNumber;
     valueHandlers["argument_reporter_boolean"] = ProcedureBlocks::booleanArgument;
+}
+
+void BlockExecutor::registerExtensionHandlers() {
+    for (const auto &extension : extensions) {
+    }
 }
 
 std::vector<Block *> BlockExecutor::runBlock(Block &block, Sprite *sprite, bool *withoutScreenRefresh, bool fromRepeat) {

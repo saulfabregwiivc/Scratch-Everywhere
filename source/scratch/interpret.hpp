@@ -26,7 +26,6 @@ extern BlockExecutor executor;
 extern ProjectType projectType;
 
 extern std::vector<Sprite *> sprites;
-extern std::vector<std::string> extensions; // The name of every extension used in the project, extensions will be loaded on demand for now (very very not optimized but easier to implement).
 extern std::vector<Sprite> spritePool;
 extern std::vector<std::string> broadcastQueue;
 extern std::unordered_map<std::string, Block *> blockLookup;

@@ -1,9 +1,11 @@
 #include "interpret.hpp"
+#include "extension.hpp"
 #include "os.hpp"
 #include "render.hpp"
+#include <fstream>
+#include <iterator>
 
 std::vector<Sprite *> sprites;
-std::vector<std::string> extensions;
 std::vector<Sprite> spritePool;
 std::vector<std::string> broadcastQueue;
 std::unordered_map<std::string, Block *> blockLookup;
@@ -546,7 +548,22 @@ void loadSprites(const nlohmann::json &json) {
 
 void loadExtensions(const nlohmann::json &json) {
     if (!json.contains("extensions")) return;
-    extensions = json["extensions"].get<std::vector<std::string>>();
+
+    const std::vector<std::string> extensionNames = json["extensions"].get<std::vector<std::string>>();
+    std::transform(extensionNames.begin(), extensionNames.end(), std::back_inserter(extensions), [](const std::string &name) {
+#ifdef __WIIU__
+        std::ostringstream typesFilenameStream;
+        typesFilenameStream << WHBGetSdCardMountPath() << "/wiiu/scratch-wiiu/extensions" << name << ".json";
+        const std::string typesFilename = typesFilenameStream.str();
+#else
+        const std::string typesFilename = "extensions/" + name + ".json";
+#endif
+        std::ifstream f(typesFilename);
+        nlohmann::json typesJSON = nlohmann::json::parse(f);
+        return (struct Extension){name, typesJSON, nullptr};
+    });
+
+    executor.registerExtensionHandlers();
 }
 
 Block *findBlock(std::string blockId) {
