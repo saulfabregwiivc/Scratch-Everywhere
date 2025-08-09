@@ -165,16 +165,17 @@ void BlockExecutor::registerExtensionHandlers() {
         for (const auto &[opcode, type] : extension.types.items()) {
             if (type.get<std::string>() == "void") continue; // TODO: Implement normal blocks.
             valueHandlers[opcode] = [extension, type](Block &block, Sprite *sprite) -> Value {
+                std::map<std::string, std::any> arguments;
+                for (const auto &pair : block.parsedInputs) {
+                    arguments[pair.first] = Scratch::getInputValue(block, pair.first, sprite).asAny();
+                }
+                char *error;
+
                 if (type.get<std::string>() == "int") {
                     auto customBlock = reinterpret_cast<int (*)(std::map<std::string, std::any> &)>(dlsym(extension.handle, block.opcode.c_str()));
-                    char *error;
                     if ((error = dlerror()) != NULL) {
                         Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
                         return Value();
-                    }
-                    std::map<std::string, std::any> arguments;
-                    for (const auto &pair : block.parsedInputs) {
-                        arguments[pair.first] = Scratch::getInputValue(block, pair.first, sprite).asAny();
                     }
                     return Value(customBlock(arguments));
                 }
