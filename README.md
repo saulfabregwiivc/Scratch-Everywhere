@@ -5,12 +5,17 @@ A W.I.P. runtime made in C++ aimed to bring any Scratch 3 project over to the Ni
 
 ## Controls
 ![Controls](https://raw.githubusercontent.com/NateXS/Scratch-3DS/refs/heads/main/scratch%203ds%20controls.png)
-[3DS] Glide your finger/stylus on the bottom screen to move the mouse, and tap the bottom screen to click.
-[Wii U] To use the mouse you can either enter mouse mode by holding L, use the D-pad to move the mouse, and press R to click or use the touch screen on the Wii U Gamepad.
 
-### Other Plaforms
+### Mouse
 
-All controllers on all other platforms use the same control scheme.
+**3DS:** Glide your finger/stylus on the bottom screen to move the mouse, and tap the bottom screen to click.
+
+**Wii U Gamepad:** You can use the touchscreen on the gamepad.
+
+**Wiimote:** You can use the Wii sensor bar to control the mouse.
+
+**Other Controllers:**  Enter Mouse Mode by holding L. Use the D-pad to move the mouse, and press R to click.
+
 
 ## Unique Features
 
@@ -49,12 +54,14 @@ As this is in a very W.I.P state, you will encounter many bugs, crashes, and thi
 - If any vector image contains text, the text will not show up
 - Extensions (eg: pen and music extensions) are not yet supported
 - Some blocks may lead to crashing/unintended behavior (please open an issue if you know a block that's causing problems)
-- [Wii U] The first controller connected will be the only one that will work
-- [3DS] Performace is poor when lots of blocks are running at once
-- [3DS] If you have a bunch of large images, some may not load
-- [3DS] Some vector images will appear bigger than they should
-- [3DS] Images cannot be over 1024x1024 in resolution
-- [3DS] Some images may appear 'fuzzy' looking or have noticable inconsistencies
+- **[Wii, Wii U, Gamecube]** The first controller connected will be the only one that will work
+- **[Gamecube]** Cloud Variables will not be supported
+- **[Gamecube]** The Gamecube has very little memory, so try to keep projects small
+- **[3DS]** Performace is poor when lots of blocks are running at once
+- **[3DS]** If you have a bunch of large images, some may not load
+- **[3DS]** Some vector images will appear bigger than they should
+- **[3DS]** Images cannot be over 1024x1024 in resolution
+- **[3DS]** Some images may appear 'fuzzy' looking or have noticable inconsistencies
 
 
 ## Unimplimented blocks
@@ -87,6 +94,9 @@ As this is in a very W.I.P state, you will encounter many bugs, crashes, and thi
 
 - Dual screen support
 - Improved controller support (multiple controllers, Wii Remotes)
+
+### Wii
+- Cloud Variable support
 
 ### Other
 
@@ -163,7 +173,7 @@ To compile for the Wii run `docker build -f Dockerfile.wii --target exporter -o 
 If you are compiling with cloud variables, you will need to have Devkitpro's SDKs, [Mist++](https://github.grady.link/mistpp), and a modified version of libcurl (instructions in mistpp-packages repo) installed.
 - For the 3DS you will need the DevkitARM toolchain and libctru.
 - - You will also need a 3DS compiled version of SDL2 and SDL2_mixer. See the [Nightly Build commands](https://github.com/NateXS/Scratch-3DS/blob/main/.github/workflows/nightly-3ds.yml) for a reference on how to compile SDL2 3DS for yourself.
-- For the Wii U you will need the DevkitPPC toolchain, WUT, all SDL2-wiiu libraries, and libromfs-wiiu.
+- For the Wii U you will need the DevkitPPC toolchain, WUT, all SDL2-wiiu libraries, and [libromfs-wiiu.](https://github.com/yawut/libromfs-wiiu)
 - For the Wii you need the DevkitPPC toolchain, libogc, all SDL2-wii libraries, and [libromfs-ogc.](https://github.com/NateXS/libromfs-ogc)
 - For the Gamecube you need the DevkitPPC toolchain, libogc, all SDL2-gamecube libraries, and [libromfs-ogc.](https://github.com/NateXS/libromfs-ogc)
 
