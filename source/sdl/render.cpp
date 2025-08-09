@@ -137,6 +137,7 @@ void Render::renderSprites() {
         }
         if (!legacyDrawing) {
             SDL_Image *image = imgFind->second;
+            image->freeTimer = 240;
             SDL_RendererFlip flip = SDL_FLIP_NONE;
 
             image->setScale((currentSprite->size * 0.01) * scale / 2.0f);
@@ -206,6 +207,7 @@ void Render::renderSprites() {
     renderVisibleVariables();
 
     SDL_RenderPresent(renderer);
+    Image::FlushImages();
 }
 
 std::unordered_map<std::string, TextObject *> Render::monitorTexts;
@@ -293,6 +295,8 @@ void LoadingScreen::cleanup() {
 }
 
 void MainMenu::init() {
+
+    Input::applyControls();
 
     std::vector<std::string> projectFiles;
 #ifdef __WIIU__

@@ -7,6 +7,7 @@ on:
       - source/scratch/**
       - source/sdl/**
       - gfx/wiiu/**
+      - gfx/*
       - include/**
       - .github/workflows/nightly-wiiu.yml
       - Dockerfile.wiiu

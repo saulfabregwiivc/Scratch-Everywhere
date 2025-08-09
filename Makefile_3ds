@@ -1,5 +1,3 @@
-
-
 .PHONY: all clean
 
 
@@ -25,8 +23,8 @@ PKGCONF_3DS	:=	$(DEVKITPRO)/portlibs/3ds/bin/arm-none-eabi-pkg-config
 APP_TITLE 	:=	Scratch 3DS
 APP_DESCRIPTION := Play Scratch Games on the 3DS! [Beta 16 Dev]
 APP_AUTHOR 	:= NateXS
-TARGET		:=	$(notdir $(CURDIR))
-BUILD		:=	build
+TARGET		:=	Scratch
+BUILD		:=	build/3ds
 SOURCES		:=	source source/3ds source/scratch source/scratch/blocks include/miniz source/sdl/audio
 DATA		:=	data
 INCLUDES	:=	include source/3ds source/scratch source/scratch/blocks source/sdl/audio
@@ -84,10 +82,10 @@ LIBDIRS	:= $(CTRULIB)  $(DEVKITPRO)/portlibs/3ds
 # no real need to edit anything past this point unless you need to add additional
 # rules for different file extensions
 #---------------------------------------------------------------------------------
-ifneq ($(BUILD),$(notdir $(CURDIR)))
+ifneq ($(notdir $(BUILD)),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export OUTPUT	:=	$(CURDIR)/$(BUILD)/$(TARGET)
 export TOPDIR	:=	$(CURDIR)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
@@ -165,7 +163,7 @@ else
 endif
 
 ifeq ($(strip $(NO_SMDH)),)
-	export _3DSXFLAGS += --smdh=$(CURDIR)/$(TARGET).smdh
+	export _3DSXFLAGS += --smdh=$(CURDIR)/$(BUILD)/$(TARGET).smdh
 endif
 
 ifneq ($(ROMFS),)
@@ -194,7 +192,7 @@ endif
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
+	@rm -fr build $(BUILD)/$(TARGET).3dsx $(BUILD)/$(TARGET).smdh $(BUILD)/$(TARGET).elf $(GFXBUILD)
 
 #---------------------------------------------------------------------------------
 $(GFXBUILD)/%.t3x	$(BUILD)/%.h	:	%.t3s
@@ -241,4 +239,3 @@ $(OUTPUT).elf	:	$(OFILES)
 #---------------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------------
-
