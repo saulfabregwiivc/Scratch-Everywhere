@@ -124,7 +124,7 @@ void Input::getInput() {
     if (SDL_GameControllerGetButton(controller, SDL_GameControllerButton::SDL_CONTROLLER_BUTTON_BACK)) {
         Input::buttonPress("back");
         anyKeyPressed = true;
-#ifdef __OGC__
+#ifdef WII
         toExit = true;
 #endif
     }
