@@ -1,5 +1,6 @@
 #include "interpret.hpp"
 #include "extension.hpp"
+#include "input.hpp"
 #include "os.hpp"
 #include "render.hpp"
 #include "unzip.hpp"
@@ -570,16 +571,19 @@ void loadExtensions(const nlohmann::json &json) {
         if (!f.is_open()) continue;
         nlohmann::json typesJSON = nlohmann::json::parse(f);
 
-#if defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
-        void *handle = dlopen((extensionsPrefix + name + ".so").c_str(), RTLD_LAZY);
-        if (!handle) {
-            Log::logError("Failed to load extension library: extensions/" + name + libExt + ", dlerror: " + dlerror());
-            continue;
-        }
+#ifdef __APPLE__
+        const std::string libExt = ".dylib";
+#elif defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
+        const std::string libExt = ".so";
 #else
 #error Unsupported Platform
 #endif
 
+        void *handle = dlopen((extensionsPrefix + name + libExt).c_str(), RTLD_LAZY);
+        if (!handle) {
+            Log::logError("Failed to load extension library: extensions/" + name + libExt + ", dlerror: " + dlerror());
+            continue;
+        }
         extensions.push_back((struct Extension){name, typesJSON, handle});
     }
 
