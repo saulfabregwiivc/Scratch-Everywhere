@@ -10,6 +10,9 @@
 #include "blocks/sound.hpp"
 #include "extension.hpp"
 #include "interpret.hpp"
+#include "os.hpp"
+#include "value.hpp"
+#include <dlfcn.h>
 #include <fstream>
 #include <nlohmann/json.hpp>
 
@@ -160,9 +163,22 @@ void BlockExecutor::registerHandlers() {
 void BlockExecutor::registerExtensionHandlers() {
     for (const auto &extension : extensions)
         for (const auto &[opcode, type] : extension.types.items()) {
-            if (type == "void") continue; // TODO: Implement normal blocks.
-            valueHandlers[opcode] = [](Block &block, Sprite *sprite) -> Value {
-                Log::log(block.opcode);
+            if (type.get<std::string>() == "void") continue; // TODO: Implement normal blocks.
+            valueHandlers[opcode] = [extension, type](Block &block, Sprite *sprite) -> Value {
+                if (type.get<std::string>() == "int") {
+                    auto customBlock = reinterpret_cast<int (*)(std::map<std::string, std::any> &)>(dlsym(extension.handle, block.opcode.c_str()));
+                    char *error;
+                    if ((error = dlerror()) != NULL) {
+                        Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
+                        return Value();
+                    }
+                    std::map<std::string, std::any> arguments;
+                    for (const auto &pair : block.parsedInputs) {
+                        arguments[pair.first] = Scratch::getInputValue(block, pair.first, sprite).asAny();
+                    }
+                    return Value(customBlock(arguments));
+                }
+                Log::logWarning("Extension block: '" + block.opcode + "' using unknown type: " + type.get<std::string>());
                 return Value();
             };
         }
