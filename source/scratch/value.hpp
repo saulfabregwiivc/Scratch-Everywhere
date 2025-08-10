@@ -156,6 +156,8 @@ class Value {
         }
         case ValueType::STRING:
             return *stringValue;
+        case ValueType::BOOLEAN:
+            return *stringValue;
         }
         return ""; // IDK what to return here but I think this is right/will work
     }
