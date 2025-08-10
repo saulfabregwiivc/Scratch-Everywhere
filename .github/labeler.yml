@@ -1,11 +1,11 @@
 3DS:
-  - title: '\[BUG\]'
-    body: '^### Device\(s\)\s*.*(New 3DS|Old 3DS).*$'
-  - title: '\[REQUEST\]'
-    body: '^### Device\s*(3DS|Both)$'
+  - '### Device\(s\)\s*.*3DS'
 
 Wii U:
-  - title: '\[BUG\]'
-    body: '^### Device\(s\)\s*.*Wii U.*$'
-  - title: '\[REQUEST\]'
-    body: '^### Device\s*(Wii U|Both)$'
+  - '### Device\(s\)\s*.*Wii U'
+
+Wii:
+  - '### Device\(s\)\s*.*Wii\s{2,}'
+
+GameCube:
+  - '### Device\(s\)\s*.*GameCube'
