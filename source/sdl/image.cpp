@@ -4,7 +4,6 @@
 #include "render.hpp"
 #include <iostream>
 
-std::vector<Image::ImageRGBA> Image::imageRGBAS;
 std::unordered_map<std::string, SDL_Image *> images;
 
 /**
@@ -99,7 +98,11 @@ void Image::loadImageFromFile(std::string filePath) {
     if (images.find(imageId) != images.end()) return;
 
     SDL_Image *image = MemoryTracker::allocate<SDL_Image>();
+#if defined(__WIIU__) || defined(__OGC__)
+    new (image) SDL_Image("romfs:/project/" + filePath);
+#else
     new (image) SDL_Image("project/" + filePath);
+#endif
 
     // Check if it's an SVG file
     bool isSVG = filePath.size() >= 4 &&

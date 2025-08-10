@@ -6,6 +6,10 @@
 #include <chrono>
 #include <dlfcn.h>
 
+#ifdef __OGC__
+#include <SDL2/SDL.h>
+#endif
+
 #ifdef ENABLE_CLOUDVARS
 #include "scratch/os.hpp"
 #include <mist/mist.hpp>
@@ -104,13 +108,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // this is for the FPS
-    std::chrono::_V2::system_clock::time_point startTime = std::chrono::high_resolution_clock::now();
-    std::chrono::_V2::system_clock::time_point endTime = std::chrono::high_resolution_clock::now();
-    // this is for frametime check
-    std::chrono::_V2::system_clock::time_point frameStartTime = std::chrono::high_resolution_clock::now();
-    std::chrono::_V2::system_clock::time_point frameEndTime = std::chrono::high_resolution_clock::now();
-
     if (!Unzip::load()) {
 
         if (Unzip::projectOpened == -3) { // main menu
@@ -153,26 +150,14 @@ int main(int argc, char **argv) {
 
     BlockExecutor::runAllBlocksByOpcode("event_whenflagclicked");
 
-    BlockExecutor::timer = std::chrono::high_resolution_clock::now();
+    BlockExecutor::timer.start();
 
     while (Render::appShouldRun()) {
-        endTime = std::chrono::high_resolution_clock::now();
-        if (endTime - startTime >= std::chrono::milliseconds(1000 / Scratch::FPS)) {
-            startTime = std::chrono::high_resolution_clock::now();
-            frameStartTime = std::chrono::high_resolution_clock::now();
-
+        if (Render::checkFramerate()) {
             Input::getInput();
             BlockExecutor::runRepeatBlocks();
             BlockExecutor::runBroadcasts();
             Render::renderSprites();
-
-            frameEndTime = std::chrono::high_resolution_clock::now();
-            auto frameDuration = frameEndTime - frameStartTime;
-            // Log::log("\x1b[17;1HFrame Time: " + std::to_string(frameDuration.count()) + " ms");
-            // Log::log("\x1b[18;1HSprites: " + std::to_string(sprites.size()));
-        }
-        if (toExit) {
-            break;
         }
     }
 

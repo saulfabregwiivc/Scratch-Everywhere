@@ -29,8 +29,8 @@ u32 clrWhite = C2D_Color32f(1, 1, 1, 1);
 u32 clrBlack = C2D_Color32f(0, 0, 0, 1);
 u32 clrGreen = C2D_Color32f(0, 0, 1, 1);
 u32 clrScratchBlue = C2D_Color32(71, 107, 115, 255);
-std::chrono::_V2::system_clock::time_point startTime = std::chrono::high_resolution_clock::now();
-std::chrono::_V2::system_clock::time_point endTime = std::chrono::high_resolution_clock::now();
+std::chrono::_V2::system_clock::time_point Render::startTime = std::chrono::high_resolution_clock::now();
+std::chrono::_V2::system_clock::time_point Render::endTime = std::chrono::high_resolution_clock::now();
 
 Render::RenderModes Render::renderMode = Render::TOP_SCREEN_ONLY;
 std::vector<Monitor> Render::visibleVariables;
@@ -82,6 +82,7 @@ bool Render::Init() {
 }
 
 bool Render::appShouldRun() {
+    if (toExit) return false;
     return aptMainLoop();
 }
 
@@ -117,7 +118,7 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
     bool isSVG = false;
     double screenOffset = (bottom && Render::renderMode != Render::BOTTOM_SCREEN_ONLY) ? -SCREEN_HEIGHT : 0;
     bool imageLoaded = false;
-    for (Image::ImageRGBA rgba : Image::imageRGBAS) {
+    for (imageRGBA rgba : imageRGBAS) {
         if (rgba.name == costumeId) {
 
             if (rgba.isSVG) isSVG = true;
@@ -127,10 +128,10 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
 
             if (imageC2Ds.find(costumeId) == imageC2Ds.end() || image->tex == nullptr || image->subtex == nullptr) {
 
-                auto rgbaFind = std::find_if(Image::imageRGBAS.begin(), Image::imageRGBAS.end(),
-                                             [&](const Image::ImageRGBA &rgba) { return rgba.name == costumeId; });
+                auto rgbaFind = std::find_if(imageRGBAS.begin(), imageRGBAS.end(),
+                                             [&](const imageRGBA &rgba) { return rgba.name == costumeId; });
 
-                if (rgbaFind != Image::imageRGBAS.end()) {
+                if (rgbaFind != imageRGBAS.end()) {
                     imageLoaded = queueC2DImage(*rgbaFind);
                 } else {
                     imageLoaded = false;
@@ -557,7 +558,7 @@ void Render::deInit() {
             free((Tex3DS_SubTexture *)data.image.subtex);
         }
     }
-    Image::imageRGBAS.clear();
+    imageRGBAS.clear();
     SoundPlayer::cleanupAudio();
     SDL_Quit();
     romfsExit();

@@ -13,6 +13,11 @@
 #include <whb/sdcard.h>
 #endif
 
+#ifdef __OGC__
+#include <fat.h>
+#include <romfs-ogc.h>
+#endif
+
 int windowWidth = 480;
 int windowHeight = 360;
 SDL_Window *window = nullptr;
@@ -20,6 +25,8 @@ SDL_Renderer *renderer = nullptr;
 
 Render::RenderModes Render::renderMode = Render::TOP_SCREEN_ONLY;
 std::vector<Monitor> Render::visibleVariables;
+std::chrono::_V2::system_clock::time_point Render::startTime = std::chrono::high_resolution_clock::now();
+std::chrono::_V2::system_clock::time_point Render::endTime = std::chrono::high_resolution_clock::now();
 
 // TODO: properly export these to input.cpp
 SDL_GameController *controller;
@@ -41,6 +48,16 @@ bool Render::Init() {
     nn::act::Initialize();
     windowWidth = 854;
     windowHeight = 480;
+#elif defined(__OGC__)
+    SYS_STDIO_Report(true);
+
+    fatInitDefault();
+    windowWidth = 640;
+    windowHeight = 480;
+    if (romfsInit()) {
+        Log::logError("Failed to init romfs.");
+        return false;
+    }
 #endif
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS);
@@ -73,6 +90,9 @@ void Render::deInit() {
     romfsExit();
     WHBUnmountSdCard();
     nn::act::Finalize();
+#endif
+#ifdef __OGC__
+    romfsExit();
 #endif
 }
 
@@ -137,7 +157,7 @@ void Render::renderSprites() {
         }
         if (!legacyDrawing) {
             SDL_Image *image = imgFind->second;
-            image->freeTimer = 240;
+            image->freeTimer = image->maxFreeTime;
             SDL_RendererFlip flip = SDL_FLIP_NONE;
 
             image->setScale((currentSprite->size * 0.01) * scale / 2.0f);
@@ -259,12 +279,12 @@ void Render::renderVisibleVariables() {
 }
 
 bool Render::appShouldRun() {
+    if (toExit) return false;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
         case SDL_QUIT:
             return false;
-            break;
         case SDL_CONTROLLERDEVICEADDED:
             controller = SDL_GameControllerOpen(0);
             break;
@@ -324,7 +344,7 @@ void MainMenu::init() {
 #ifdef __WIIU__
         errorText = "No Scratch projects found!\n Go download a Scratch project and put it\n in sdcard:/wiiu/scratch-wiiu!\nPress Start to exit.";
 #else
-        errorText = "No Scratch projects found!\n Go download a Scratch project and put it\n in the same folder as this executable!\nPress Start to exit.";
+        errorText = "No Scratch projects found! Start to exit";
 #endif
         errorTextInfo = createTextObject(errorText,
                                          windowWidth / 2, windowWidth / 2);
@@ -341,9 +361,18 @@ void MainMenu::render() {
 
     // use scratch input instead of direct SDL input because uhhhh lazy 😁
     Input::getInput();
-    bool upPressed = std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "up arrow") != Input::inputButtons.end() && Input::keyHeldFrames < 2;
-    bool downPressed = std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "down arrow") != Input::inputButtons.end() && Input::keyHeldFrames < 2;
-    bool aPressed = std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "a") != Input::inputButtons.end() && Input::keyHeldFrames < 2;
+    bool upPressed = (std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "up arrow") != Input::inputButtons.end() ||
+                      std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "g") != Input::inputButtons.end()) &&
+                     Input::keyHeldFrames < 2;
+
+    bool downPressed = (std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "down arrow") != Input::inputButtons.end() ||
+                        std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "j") != Input::inputButtons.end()) &&
+                       Input::keyHeldFrames < 2;
+
+    bool aPressed = (std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "a") != Input::inputButtons.end() ||
+                     std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "x") != Input::inputButtons.end()) &&
+                    Input::keyHeldFrames < 2;
+
     bool startPressed = std::find(Input::inputButtons.begin(), Input::inputButtons.end(), "1") != Input::inputButtons.end() && Input::keyHeldFrames < 2;
 
     if (hasProjects) {
