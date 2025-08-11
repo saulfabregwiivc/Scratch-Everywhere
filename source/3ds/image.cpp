@@ -55,6 +55,30 @@ const u32 rgba_to_abgr(u32 px) {
     return (a << 24) | (b << 16) | (g << 8) | r;
 }
 
+Image::Image(std::string filePath) {
+    if (!loadImageFromFile(filePath, false)) return;
+    imageId = imageRGBAS.back().name;
+    width = imageRGBAS.back().width;
+    height = imageRGBAS.back().height;
+    get_C2D_Image(imageRGBAS.back());
+}
+
+Image::~Image() {
+    queueFreeImage(imageId);
+}
+
+void Image::render(double xPos, double yPos) {
+    auto rgbaIt = std::find_if(imageRGBAS.begin(), imageRGBAS.end(), [&](const imageRGBA &img) {
+        return img.name == imageId;
+    });
+    if (rgbaIt != imageRGBAS.end()) {
+        if (imageC2Ds.find(rgbaIt->name) != imageC2Ds.end()) {
+            imageC2Ds[rgbaIt->name].freeTimer = 240;
+            C2D_DrawImageAt(imageC2Ds[rgbaIt->name].image, static_cast<int>(xPos), static_cast<int>(yPos), 1);
+        }
+    }
+}
+
 /**
  * Takes every Image from the Scratch's sb3 file and converts them to RGBA data
  */
@@ -136,20 +160,23 @@ void Image::loadImages(mz_zip_archive *zip) {
 /**
  * Turns a single image from an unzipped Scratch project into RGBA data
  */
-void Image::loadImageFromFile(std::string filePath) {
+bool Image::loadImageFromFile(std::string filePath, bool fromScratchProject) {
     std::string filename = filePath.substr(filePath.find_last_of('/') + 1);
     std::string path2 = filename.substr(0, filename.find_last_of('.'));
 
     auto it = std::find_if(imageRGBAS.begin(), imageRGBAS.end(), [&](const imageRGBA &img) {
         return img.name == path2;
     });
-    if (it != imageRGBAS.end()) return;
+    if (it != imageRGBAS.end()) return true;
 
-    std::string fullPath = "romfs:/project/" + filePath;
+    std::string fullPath;
+    if (fromScratchProject) fullPath = "romfs:/project/" + filePath;
+    else fullPath = "romfs:/" + filePath;
+
     FILE *file = fopen(fullPath.c_str(), "rb");
     if (!file) {
         Log::logWarning("Invalid image file name " + filePath);
-        return;
+        return false;
     }
 
     int width, height;
@@ -172,7 +199,7 @@ void Image::loadImageFromFile(std::string filePath) {
         if (!svg_data) {
             Log::logWarning("Failed to allocate memory for SVG file: " + filePath);
             fclose(file);
-            return;
+            return false;
         }
 
         size_t read_size = fread(svg_data, 1, file_size, file);
@@ -181,7 +208,7 @@ void Image::loadImageFromFile(std::string filePath) {
         if (read_size != (size_t)file_size) {
             Log::logWarning("Failed to read SVG file completely: " + filePath);
             free(svg_data);
-            return;
+            return false;
         }
         newRGBA.isSVG = true;
         rgba_data = SVGToRGBA(svg_data, file_size, width, height);
@@ -189,7 +216,7 @@ void Image::loadImageFromFile(std::string filePath) {
 
         if (!rgba_data) {
             Log::logWarning("Failed to decode SVG: " + filePath);
-            return;
+            return false;
         }
     } else {
         // Handle regular image files (PNG, JPG)
@@ -199,7 +226,7 @@ void Image::loadImageFromFile(std::string filePath) {
 
         if (!rgba_data) {
             Log::logWarning("Failed to decode image: " + filePath);
-            return;
+            return false;
         }
     }
 
@@ -217,6 +244,7 @@ void Image::loadImageFromFile(std::string filePath) {
 
     Log::log("successfuly laoded image from file!");
     imageRGBAS.push_back(newRGBA);
+    return true;
 }
 
 /**

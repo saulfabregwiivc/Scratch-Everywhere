@@ -105,7 +105,32 @@ std::vector<std::pair<double, double>> getCollisionPoints(Sprite *currentSprite)
 }
 
 void Scratch::fenceSpriteWithinBounds(Sprite *sprite) {
-    // todo do this later
+    double halfWidth = Scratch::projectWidth / 2.0;
+    double halfHeight = Scratch::projectHeight / 2.0;
+    double scale = sprite->size / 100.0;
+    double spriteHalfWidth = (sprite->spriteWidth * scale) / 2.0;
+    double spriteHalfHeight = (sprite->spriteHeight * scale) / 2.0;
+
+    // how much of the sprite remains visible when fenced
+    const double sliverSize = 5.0;
+
+    double maxLeft = halfWidth - sliverSize;
+    double minRight = -halfWidth + sliverSize;
+    double maxBottom = halfHeight - sliverSize;
+    double minTop = -halfHeight + sliverSize;
+
+    if (sprite->xPosition - spriteHalfWidth > maxLeft) {
+        sprite->xPosition = maxLeft + spriteHalfWidth;
+    }
+    if (sprite->xPosition + spriteHalfWidth < minRight) {
+        sprite->xPosition = minRight - spriteHalfWidth;
+    }
+    if (sprite->yPosition - spriteHalfHeight > maxBottom) {
+        sprite->yPosition = maxBottom + spriteHalfHeight;
+    }
+    if (sprite->yPosition + spriteHalfHeight < minTop) {
+        sprite->yPosition = minTop - spriteHalfHeight;
+    }
 }
 
 void loadSprites(const nlohmann::json &json) {

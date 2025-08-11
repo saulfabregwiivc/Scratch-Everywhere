@@ -20,7 +20,7 @@ APP_TITLE	:= Scratch Wii
 APP_AUTHOR	:= NateXS
 APP_SHORT_DESCRIPTION := Play Scratch games on the Wii!
 APP_LONG_DESCRIPTION	:= A custom Runtime that allows you to play any Scratch 3 project on your Wii!
-APP_VERSION	:= 0.16
+APP_VERSION	:= 0.17
 RELEASE_DATE := 20250810000000 # its YEAR-MONTH-DAY-TIME xxxx-xx-xx-xxxxxx
 
 #---------------------------------------------------------------------------------
@@ -28,9 +28,9 @@ RELEASE_DATE := 20250810000000 # its YEAR-MONTH-DAY-TIME xxxx-xx-xx-xxxxxx
 #---------------------------------------------------------------------------------
 TARGET		:=	scratch-wii
 BUILD		:=	build/wii
-SOURCES		:=	source source/scratch source/scratch/blocks source/sdl source/sdl/audio include/miniz include/nlohmann
+SOURCES		:=	source source/scratch source/scratch/blocks source/scratch/menus source/sdl source/sdl/audio include/miniz include/nlohmann
 DATA		:=	data
-INCLUDES	:=	include source/scratch source/scratch/blocks source/sdl source/sdl/audio include/nlohmann
+INCLUDES	:=	include source/scratch source/scratch/blocks source/scratch/menus source/sdl source/sdl/audio include/nlohmann
 ROMFS		:=	romfs
 GRAPHICS	:=	gfx
 GFXBUILD	:=	$(ROMFS)/gfx

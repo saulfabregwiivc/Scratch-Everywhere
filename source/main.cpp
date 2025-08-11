@@ -1,6 +1,7 @@
 #include "scratch/blockExecutor.hpp"
 #include "scratch/extension.hpp"
 #include "scratch/input.hpp"
+#include "scratch/menus/mainMenu.hpp"
 #include "scratch/render.hpp"
 #include "scratch/unzip.hpp"
 #include <chrono>

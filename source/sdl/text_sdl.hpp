@@ -3,12 +3,15 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <iostream>
+#include <unordered_map>
 
 class TextObjectSDL : public TextObject {
   private:
+    static std::unordered_map<std::string, TTF_Font *> fonts;
     TTF_Font *font = nullptr;
     SDL_Renderer *renderer = nullptr;
     SDL_Texture *texture = nullptr;
+    size_t memorySize = 0;
     int textWidth = 0;
     int textHeight = 0;
 

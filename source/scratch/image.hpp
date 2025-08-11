@@ -4,7 +4,27 @@
 #include <vector>
 
 class Image {
+  private:
+    std::string imageId;
+    int width;
+    int height;
+
   public:
+    /**
+     * Constructor for an image, good if you want to use images outside of a Scratch project.
+     * `3DS`: Loads an image RGBA and C2D_Image from a given filepath.
+     * `SDL`: Loads an SDL_Image from a given filepath.
+     * @param filepath does NOT need `romfs:/`, it will automatically be added.
+     */
+    Image(std::string filePath);
+
+    ~Image();
+
+    int getWidth() { return width; }
+    int getHeight() { return height; }
+
+    void render(double xPos, double yPos);
+
     /**
      * `3DS`: Takes every Image in a Scratch sb3 file and converts them to RGBA data.
      * `SDL`: Takes every image in a Scratch sb3 file and turns it into an 'SDL_Image' object.
@@ -14,8 +34,10 @@ class Image {
     /**
      * `3DS`: Turns a single image from an unzipped Scratch project into RGBA data.
      * `SDL`: Loads a single `SDL_Image` from an unzipped filepath.
+     * @param filePath
+     * @param fromScratchProject
      */
-    static void loadImageFromFile(std::string filePath);
+    static bool loadImageFromFile(std::string filePath, bool fromScratchProject = true);
 
     /**
      * `3DS`: Nothing yet yippie

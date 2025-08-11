@@ -5,6 +5,31 @@
 #include <iostream>
 
 std::unordered_map<std::string, SDL_Image *> images;
+static std::vector<std::string> toDelete;
+
+Image::Image(std::string filePath) {
+    if (!loadImageFromFile(filePath, false)) return;
+    std::string imgId = filePath.substr(0, filePath.find_last_of('.'));
+    imageId = imgId;
+    width = images[imgId]->width;
+    height = images[imgId]->height;
+}
+
+Image::~Image() {
+    queueFreeImage(imageId);
+}
+
+void Image::render(double xPos, double yPos) {
+    if (images.find(imageId) != images.end()) {
+        SDL_Image *image = images[imageId];
+
+        image->renderRect.x = xPos;
+        image->renderRect.y = yPos;
+
+        image->freeTimer = image->maxFreeTime;
+        SDL_RenderCopy(renderer, image->spriteTexture, &image->textureRect, &image->renderRect);
+    }
+}
 
 /**
  * Takes every image in a Scratch sb3 file and turns it into an 'SDL_Image' object.
@@ -83,8 +108,8 @@ void Image::loadImages(mz_zip_archive *zip) {
     //         image->memorySize = textureMemory;
 
     //         // Strip extension from filename for the ID
-    //         std::string imageId = zipFileName.substr(0, zipFileName.find_last_of('.'));
-    //         images[imageId] = image;
+    //         std::string imgId = zipFileName.substr(0, zipFileName.find_last_of('.'));
+    //         images[imgId] = image;
     //     }
     // }
 }
@@ -93,16 +118,22 @@ void Image::loadImages(mz_zip_archive *zip) {
  * Loads a single `SDL_Image` from an unzipped filepath .
  * @param filePath
  */
-void Image::loadImageFromFile(std::string filePath) {
-    std::string imageId = filePath.substr(0, filePath.find_last_of('.'));
-    if (images.find(imageId) != images.end()) return;
+bool Image::loadImageFromFile(std::string filePath, bool fromScratchProject) {
+    std::string imgId = filePath.substr(0, filePath.find_last_of('.'));
+    if (images.find(imgId) != images.end()) return true;
+
+    std::string finalPath;
+
+#if defined(__WIIU__) || defined(__OGC__)
+    finalPath = "romfs:/";
+#endif
+    if (fromScratchProject)
+        finalPath = finalPath + "project/";
+
+    finalPath = finalPath + filePath;
 
     SDL_Image *image = MemoryTracker::allocate<SDL_Image>();
-#if defined(__WIIU__) || defined(__OGC__)
-    new (image) SDL_Image("romfs:/project/" + filePath);
-#else
-    new (image) SDL_Image("project/" + filePath);
-#endif
+    new (image) SDL_Image(finalPath);
 
     // Check if it's an SVG file
     bool isSVG = filePath.size() >= 4 &&
@@ -118,7 +149,8 @@ void Image::loadImageFromFile(std::string filePath) {
         image->memorySize = textureMemory;
     }
 
-    images[imageId] = image;
+    images[imgId] = image;
+    return true;
 }
 
 /**
@@ -127,8 +159,8 @@ void Image::loadImageFromFile(std::string filePath) {
  * @param costumeId The filename of the image to load (e.g., "sprite1.png")
  */
 void Image::loadImageFromSB3(mz_zip_archive *zip, const std::string &costumeId) {
-    std::string imageId = costumeId.substr(0, costumeId.find_last_of('.'));
-    if (images.find(imageId) != images.end()) return;
+    std::string imgId = costumeId.substr(0, costumeId.find_last_of('.'));
+    if (images.find(imgId) != images.end()) return;
 
     Log::log("Loading single image: " + costumeId);
 
@@ -183,6 +215,7 @@ void Image::loadImageFromSB3(mz_zip_archive *zip, const std::string &costumeId) 
 
     if (!surface) {
         Log::logWarning("Failed to load image from memory: " + costumeId);
+        Log::logWarning("IMG Error: " + std::string(IMG_GetError()));
         return;
     }
 
@@ -192,12 +225,6 @@ void Image::loadImageFromSB3(mz_zip_archive *zip, const std::string &costumeId) 
         SDL_FreeSurface(surface);
         return;
     }
-
-    // Track texture memory usage
-    int width, height;
-    SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
-    size_t textureMemory = width * height * 4;
-    MemoryTracker::allocate(textureMemory);
 
     SDL_FreeSurface(surface);
 
@@ -209,10 +236,19 @@ void Image::loadImageFromSB3(mz_zip_archive *zip, const std::string &costumeId) 
     SDL_QueryTexture(texture, nullptr, nullptr, &image->width, &image->height);
     image->renderRect = { 0, 0, image->width, image->height };
     image->textureRect = { 0, 0, image->width, image->height };
-    image->memorySize = textureMemory;
+
+    // calculate VRAM usage
+    Uint32 format;
+    int w, h;
+    SDL_QueryTexture(texture, &format, NULL, &w, &h);
+    int bpp;
+    Uint32 Rmask, Gmask, Bmask, Amask;
+    SDL_PixelFormatEnumToMasks(format, &bpp, &Rmask, &Gmask, &Bmask, &Amask);
+    image->memorySize = (w * h * bpp) / 8;
+    MemoryTracker::allocateVRAM(image->memorySize);
 
     Log::log("Successfully loaded image: " + costumeId);
-    images[imageId] = image;
+    images[imgId] = image;
 }
 
 /**
@@ -242,18 +278,49 @@ void Image::freeImage(const std::string &costumeId) {
  * An `SDL_Image` will get freed if it goes unused for 120 frames.
  */
 void Image::FlushImages() {
-    std::vector<std::string> toDelete;
 
-    for (auto &[id, img] : images) {
-        if (img->freeTimer <= 0) {
-            toDelete.push_back(id);
-        } else {
-            img->freeTimer -= 1;
+    // Free images if ram usage is too high
+    if (MemoryTracker::getVRAMUsage() + MemoryTracker::getCurrentUsage() > MemoryTracker::getMaxVRAMUsage() * 0.8) {
+
+        size_t times = 0;
+        while (MemoryTracker::getVRAMUsage() + MemoryTracker::getCurrentUsage() > MemoryTracker::getMaxVRAMUsage() * 0.5 && !images.empty()) {
+            SDL_Image *imgToDelete = nullptr;
+            std::string toDeleteStr = "";
+
+            for (auto &[id, img] : images) {
+                if (imgToDelete == nullptr && img->freeTimer != img->maxFreeTime) {
+                    imgToDelete = img;
+                    toDeleteStr = id;
+                    continue;
+                }
+                if (imgToDelete != nullptr && img->freeTimer < imgToDelete->freeTimer && img->freeTimer != img->maxFreeTime) {
+                    imgToDelete = img;
+                    toDeleteStr = id;
+                }
+            }
+
+            if (toDeleteStr != "") {
+                Image::freeImage(toDeleteStr);
+            } else {
+                break;
+            }
+            times++;
+            if (times > 15) break;
         }
-    }
+    } else {
+        // Free images based on a timer
+        for (auto &[id, img] : images) {
+            if (img->freeTimer <= 0) {
+                toDelete.push_back(id);
+            } else {
+                img->freeTimer -= 1;
+            }
+        }
 
-    for (const std::string &id : toDelete) {
-        Image::freeImage(id);
+        for (const std::string &id : toDelete) {
+            Image::freeImage(id);
+        }
+        toDelete.clear();
     }
 }
 
@@ -285,7 +352,15 @@ SDL_Image::SDL_Image(std::string filePath) {
     textureRect.x = 0;
     textureRect.y = 0;
 
-    memorySize = width * height * 4;
+    // calculate VRAM usage
+    Uint32 format;
+    int w, h;
+    SDL_QueryTexture(spriteTexture, &format, NULL, &w, &h);
+    int bpp;
+    Uint32 Rmask, Gmask, Bmask, Amask;
+    SDL_PixelFormatEnumToMasks(format, &bpp, &Rmask, &Gmask, &Bmask, &Amask);
+    memorySize = (w * h * bpp) / 8;
+    MemoryTracker::allocateVRAM(memorySize);
 
     Log::log("Image loaded!");
 }
@@ -294,9 +369,11 @@ SDL_Image::SDL_Image(std::string filePath) {
  * currently does nothing in the SDL version 😁😁
  */
 void Image::queueFreeImage(const std::string &costumeId) {
+    toDelete.push_back(costumeId);
 }
 
 SDL_Image::~SDL_Image() {
+    MemoryTracker::deallocateVRAM(memorySize);
     SDL_DestroyTexture(spriteTexture);
 }
 
