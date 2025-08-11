@@ -109,7 +109,6 @@ struct ExtensionSprite {
 };
 
 struct ExtensionData {
-    int currentSprite;
     std::function<ExtensionSprite(int)> getSprite();
     std::function<std::vector<ExtensionSprite>(int)> getSprites();
 
