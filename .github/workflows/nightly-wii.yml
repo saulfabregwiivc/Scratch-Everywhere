@@ -36,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Scratch Wii Nightly
-          path: scratch-wii.dol
+          path: scratch-wii.zip

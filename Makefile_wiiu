@@ -32,6 +32,7 @@ APP_DRC_SPLASH				:=	gfx/wiiu/drc-splash.png
 
 # Config Options
 ENABLE_CLOUDVARS	?=	0
+ENABLE_AUDIO	?=	1
 
 # Flags
 
@@ -46,7 +47,13 @@ CFLAGS	+=	-I$(DEVKITPRO)/wut/include
 ASFLAGS	:=	-g $(MACHDEP)
 LDFLAGS	:=	-g $(MACHDEP) $(RPXSPECS) -Wl,-Map,$(notdir $*.map)
 
+ifeq ($(ENABLE_AUDIO),1)
+CFLAGS	+=	-DENABLE_AUDIO
 LIBS	:=	`$(PKGCONF_WIIU) --libs SDL2_image SDL2_ttf SDL2_mixer sdl2` `$(PKGCONF) --libs zlib libpng`
+else
+LIBS	:=	`$(PKGCONF_WIIU) --libs SDL2_image SDL2_ttf sdl2` `$(PKGCONF) --libs zlib libpng`
+endif
+
 LIBS	+=	-lharfbuzz -lfreetype
 
 ifeq ($(ENABLE_CLOUDVARS),1)

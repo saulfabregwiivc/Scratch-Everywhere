@@ -16,7 +16,7 @@ TextObjectSDL::TextObjectSDL(std::string txt, double posX, double posY, std::str
 
     // open font if not loaded
     if (fonts.find(fontPath) == fonts.end()) {
-        TTF_Font *loadedFont = TTF_OpenFont(fontPath.c_str(), 24);
+        TTF_Font *loadedFont = TTF_OpenFont(fontPath.c_str(), 30);
         if (!loadedFont) {
             std::cerr << "Failed to load font " << fontPath << ": " << TTF_GetError() << std::endl;
         } else {

@@ -5,16 +5,18 @@
 #ifdef __3DS__
 #include <3ds.h>
 #endif
-#include <SDL2/SDL_mixer.h>
 #include <algorithm>
 #include <iostream>
 
 std::unordered_map<std::string, SDL_Audio *> SDL_Sounds;
 std::string currentStreamedSound = "";
 
+#ifdef ENABLE_AUDIO
 SDL_Audio::SDL_Audio() : audioChunk(nullptr) {}
+#endif
 
 SDL_Audio::~SDL_Audio() {
+#ifdef ENABLE_AUDIO
     if (memorySize > 0) {
         MemoryTracker::deallocate(nullptr, memorySize);
     }
@@ -26,6 +28,7 @@ SDL_Audio::~SDL_Audio() {
         // Mix_FreeMusic(music);
         // music = nullptr;
     }
+#endif
 }
 
 // code down here kinda messy,,, TODO fix that
@@ -56,6 +59,7 @@ void NDS_soundLoaderThread(void *data) {
 }
 
 void SoundPlayer::startSoundLoaderThread(Sprite *sprite, mz_zip_archive *zip, const std::string &soundId) {
+#ifdef ENABLE_AUDIO
 
     if (SDL_Sounds.find(soundId) != SDL_Sounds.end()) {
         return;
@@ -98,9 +102,12 @@ void SoundPlayer::startSoundLoaderThread(Sprite *sprite, mz_zip_archive *zip, co
         SDL_DetachThread(thread);
     }
 #endif
+
+#endif
 }
 
 bool SoundPlayer::loadSoundFromSB3(Sprite *sprite, mz_zip_archive *zip, const std::string &soundId, const bool &streamed) {
+#ifdef ENABLE_AUDIO
     if (!zip) {
         Log::logWarning("Error: Zip archive is null");
         return false;
@@ -225,12 +232,13 @@ bool SoundPlayer::loadSoundFromSB3(Sprite *sprite, mz_zip_archive *zip, const st
             return true;
         }
     }
-
+#endif
     Log::logWarning("Audio not found: " + soundId);
     return false;
 }
 
 bool SoundPlayer::loadSoundFromFile(Sprite *sprite, std::string fileName, const bool &streamed) {
+#ifdef ENABLE_AUDIO
     Log::log("Loading audio from file: " + fileName);
 
     // Check if file has supported extension
@@ -305,9 +313,12 @@ bool SoundPlayer::loadSoundFromFile(Sprite *sprite, std::string fileName, const 
     playSound(fileName);
     setSoundVolume(fileName, sprite->volume);
     return true;
+#endif
+    return false;
 }
 
 int SoundPlayer::playSound(const std::string &soundId) {
+#ifdef ENABLE_AUDIO
     auto it = SDL_Sounds.find(soundId);
     if (it != SDL_Sounds.end()) {
 
@@ -334,11 +345,13 @@ int SoundPlayer::playSound(const std::string &soundId) {
             return result;
         }
     }
+#endif
     Log::logWarning("Sound not found: " + soundId);
     return -1;
 }
 
 void SoundPlayer::setSoundVolume(const std::string &soundId, float volume) {
+#ifdef ENABLE_AUDIO
     auto soundFind = SDL_Sounds.find(soundId);
     if (soundFind != SDL_Sounds.end()) {
 
@@ -352,9 +365,11 @@ void SoundPlayer::setSoundVolume(const std::string &soundId, float volume) {
             Mix_Volume(channel, sdlVolume);
         }
     }
+#endif
 }
 
 float SoundPlayer::getSoundVolume(const std::string &soundId) {
+#ifdef ENABLE_AUDIO
     auto soundFind = SDL_Sounds.find(soundId);
     if (soundFind != SDL_Sounds.end()) {
         int sdlVolume = 0;
@@ -375,12 +390,13 @@ float SoundPlayer::getSoundVolume(const std::string &soundId) {
         // convert from SDL's 0-128 range back to 0-100 range
         return (sdlVolume / 128.0f) * 100.0f;
     }
-
+#endif
     // return -1 to indicate sound not found
     return -1.0f;
 }
 
 void SoundPlayer::stopSound(const std::string &soundId) {
+#ifdef ENABLE_AUDIO
     auto soundFind = SDL_Sounds.find(soundId);
     if (soundFind != SDL_Sounds.end()) {
         int channel = soundFind->second->channelId;
@@ -388,9 +404,11 @@ void SoundPlayer::stopSound(const std::string &soundId) {
     } else {
         Log::logWarning("No active channel found for sound: " + soundId);
     }
+#endif
 }
 
 void SoundPlayer::stopStreamedSound() {
+#ifdef ENABLE_AUDIO
     Mix_HaltMusic();
     if (!currentStreamedSound.empty()) {
         auto it = SDL_Sounds.find(currentStreamedSound);
@@ -399,6 +417,7 @@ void SoundPlayer::stopStreamedSound() {
         }
         currentStreamedSound = "";
     }
+#endif
 }
 
 void SoundPlayer::checkAudio() {
@@ -410,6 +429,7 @@ void SoundPlayer::checkAudio() {
 }
 
 bool SoundPlayer::isSoundPlaying(const std::string &soundId) {
+#ifdef ENABLE_AUDIO
     auto soundFind = SDL_Sounds.find(soundId);
     if (soundFind != SDL_Sounds.end()) {
         if (!soundFind->second->isLoaded) return true;
@@ -420,6 +440,7 @@ bool SoundPlayer::isSoundPlaying(const std::string &soundId) {
         else
             return Mix_PlayingMusic() != 0;
     }
+#endif
     return false;
 }
 
@@ -443,6 +464,7 @@ void SoundPlayer::freeAudio(const std::string &soundId) {
 }
 
 void SoundPlayer::cleanupAudio() {
+#ifdef ENABLE_AUDIO
     Mix_HaltMusic();
     Mix_HaltChannel(-1);
 
@@ -454,4 +476,5 @@ void SoundPlayer::cleanupAudio() {
     SDL_Sounds.clear();
     Mix_CloseAudio();
     Mix_Quit();
+#endif
 }

@@ -8,8 +8,10 @@
 #include "../scratch/unzip.hpp"
 #include "image.hpp"
 #include "interpret.hpp"
+#ifdef ENABLE_AUDIO
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+#endif
 
 #ifdef ENABLE_CLOUDVARS
 #include <malloc.h>
@@ -67,6 +69,7 @@ bool Render::Init() {
 #endif
 
     romfsInit();
+#ifdef ENABLE_AUDIO
     // waiting for beta 12 to enable,, <- its beta 17 why is this comment still here 😭
     SDL_Init(SDL_INIT_AUDIO);
     // Initialize SDL_mixer
@@ -78,6 +81,7 @@ bool Render::Init() {
     if (Mix_Init(flags) != flags) {
         Log::logWarning(std::string("SDL_mixer could not initialize MP3/OGG support! SDL_mixer Error: ") + Mix_GetError());
     }
+#endif
 
     return true;
 }
@@ -235,8 +239,8 @@ void renderImage(C2D_Image *image, Sprite *currentSprite, std::string costumeId,
 
         C2D_DrawImageAtRotated(
             imageC2Ds[costumeId].image,
-            (currentSprite->xPosition * scale) + (screenWidth / 2) - offsetX * std::cos(rotation) + offsetY * std::sin(rotation),
-            (currentSprite->yPosition * -1 * scale) + (SCREEN_HEIGHT * heightMultiplier) + screenOffset - offsetX * std::sin(rotation) - offsetY * std::cos(rotation),
+            static_cast<int>((currentSprite->xPosition * scale) + (screenWidth / 2) - offsetX * std::cos(rotation) + offsetY * std::sin(rotation)),
+            static_cast<int>((currentSprite->yPosition * -1 * scale) + (SCREEN_HEIGHT * heightMultiplier) + screenOffset - offsetX * std::sin(rotation) - offsetY * std::cos(rotation)),
             1,
             rotation,
             &tinty,
@@ -454,7 +458,6 @@ void LoadingScreen::cleanup() {
 
 void Render::deInit() {
 #ifdef ENABLE_CLOUDVARS
-    free(SOC_buffer);
     socExit();
 #endif
 
@@ -472,7 +475,9 @@ void Render::deInit() {
     }
     imageRGBAS.clear();
     SoundPlayer::cleanupAudio();
+#ifdef ENABLE_AUDIO
     SDL_Quit();
+#endif
     romfsExit();
     gfxExit();
 }
