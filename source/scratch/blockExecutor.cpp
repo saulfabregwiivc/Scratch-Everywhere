@@ -173,7 +173,47 @@ void BlockExecutor::registerHandlers() {
 void BlockExecutor::registerExtensionHandlers() {
     for (const auto &extension : extensions)
         for (const auto &[opcode, type] : extension.types.items()) {
-            if (type.get<std::string>() == "void") continue; // TODO: Implement normal blocks.
+            if (type.get<std::string>() == "void") handlers[opcode] = [extension](Block &block, Sprite *sprite, bool *withoutScreenRefresh, bool fromRepeat) -> BlockResult {
+                std::map<std::string, std::any> arguments; // This is intentionally a `std::map` and not a `std::unordered_map` because `std::unordered_map`s take up more memory and are faster but since there are almost always only 1 or 2 arguments the performance would be exactly the same but use more memory.
+                for (const auto &pair : block.parsedInputs) {
+                    arguments[pair.first] = Scratch::getInputValue(block, pair.first, sprite).asAny();
+                }
+                char *error;
+
+                ExtensionData data = {
+                    [sprite]() {
+                        return convertSpriteToExtensionSprite(sprite);
+                    },
+                    []() {
+                        std::vector<ExtensionSprite> extensionSprites;
+                        for (const auto &sprite : sprites)
+                            extensionSprites.push_back(convertSpriteToExtensionSprite(sprite));
+                        return extensionSprites;
+                    },
+                    [](std::string message) { Log::log(message); },
+                    [](std::string message) { Log::logWarning(message); },
+                    [](std::string message) { Log::logError(message); },
+
+#ifdef SDL_BUILD
+                    controller,
+                    window,
+                    renderer
+#elif defined(__3DS__)
+                    topScreen,
+                    bottomScreen
+#endif
+                };
+
+                auto customBlock = reinterpret_cast<void (*)(std::map<std::string, std::any> &, ExtensionData)>(dlsym(extension.handle, block.opcode.c_str()));
+                if ((error = dlerror()) != NULL) {
+                    Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
+                    return BlockResult::CONTINUE;
+                }
+                customBlock(arguments, data);
+
+                return BlockResult::CONTINUE;
+            };
+
             valueHandlers[opcode] = [extension, type](Block &block, Sprite *sprite) -> Value {
                 std::map<std::string, std::any> arguments; // This is intentionally a `std::map` and not a `std::unordered_map` because `std::unordered_map`s take up more memory and are faster but since there are almost always only 1 or 2 arguments the performance would be exactly the same but use more memory.
                 for (const auto &pair : block.parsedInputs) {
