@@ -44,7 +44,7 @@ ENABLE_BUBBLES		?=	1
 #---------------------------------------------------------------------------------
 CFLAGS	:=	`$(PREFIX)pkg-config --cflags sdl2 SDL2_ttf SDL2_mixer SDL2_image freetype2` -g -O2 -Wall $(MACHDEP) $(INCLUDE) -DWII -D__OGC__ -DSDL_BUILD -DCONSOLE -DMOUSE_INPUT
 
-CXXFLAGS	:=	$(CFLAGS) -fno-rtti -std=c++17 -fexceptions
+CXXFLAGS	:=	$(CFLAGS) -fno-rtti -std=c++20 -fexceptions
 
 ASFLAGS	:=	-g $(ARCH)
 

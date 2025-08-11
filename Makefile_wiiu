@@ -59,7 +59,7 @@ $(error "[ERROR] Mist++ must be v0.2.0 or newer.")
 endif
 endif
 
-CXXFLAGS	:=	$(CFLAGS) -std=c++17 -Wall -fexceptions
+CXXFLAGS	:=	$(CFLAGS) -std=c++20 -Wall -fexceptions
 
 LIBDIRS	:=	$(PORTLIBS) $(WUT_ROOT)
 
