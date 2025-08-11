@@ -13,21 +13,37 @@ Image::Image(std::string filePath) {
     imageId = imgId;
     width = images[imgId]->width;
     height = images[imgId]->height;
+    scale = 1.0;
+    rotation = 0.0;
+    opacity = 1.0;
 }
 
 Image::~Image() {
     queueFreeImage(imageId);
 }
 
-void Image::render(double xPos, double yPos) {
+void Image::render(double xPos, double yPos, bool centered) {
     if (images.find(imageId) != images.end()) {
         SDL_Image *image = images[imageId];
 
-        image->renderRect.x = xPos;
-        image->renderRect.y = yPos;
+        image->setScale(scale);
+        image->setRotation(rotation);
+
+        if (centered) {
+            image->renderRect.x = xPos - (image->renderRect.w / 2);
+            image->renderRect.y = yPos - (image->renderRect.h / 2);
+        } else {
+            image->renderRect.x = xPos;
+            image->renderRect.y = yPos;
+        }
+
+        Uint8 alpha = static_cast<Uint8>(opacity * 255);
+        SDL_SetTextureAlphaMod(image->spriteTexture, alpha);
+
+        SDL_Point center = {image->renderRect.w / 2, image->renderRect.h / 2};
 
         image->freeTimer = image->maxFreeTime;
-        SDL_RenderCopy(renderer, image->spriteTexture, &image->textureRect, &image->renderRect);
+        SDL_RenderCopyEx(renderer, image->spriteTexture, &image->textureRect, &image->renderRect, rotation, &center, SDL_FLIP_NONE);
     }
 }
 

@@ -48,6 +48,7 @@ class Input {
         }
     }
 
+    static std::vector<int> getTouchPosition();
     static void getInput();
     static std::string getUsername();
     static int keyHeldFrames;

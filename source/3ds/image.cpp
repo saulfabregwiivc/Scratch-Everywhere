@@ -60,6 +60,9 @@ Image::Image(std::string filePath) {
     imageId = imageRGBAS.back().name;
     width = imageRGBAS.back().width;
     height = imageRGBAS.back().height;
+    scale = 1.0;
+    rotation = 0.0;
+    opacity = 1.0;
     get_C2D_Image(imageRGBAS.back());
 }
 
@@ -67,14 +70,25 @@ Image::~Image() {
     queueFreeImage(imageId);
 }
 
-void Image::render(double xPos, double yPos) {
+void Image::render(double xPos, double yPos, bool centered) {
     auto rgbaIt = std::find_if(imageRGBAS.begin(), imageRGBAS.end(), [&](const imageRGBA &img) {
         return img.name == imageId;
     });
     if (rgbaIt != imageRGBAS.end()) {
         if (imageC2Ds.find(rgbaIt->name) != imageC2Ds.end()) {
             imageC2Ds[rgbaIt->name].freeTimer = 240;
-            C2D_DrawImageAt(imageC2Ds[rgbaIt->name].image, static_cast<int>(xPos), static_cast<int>(yPos), 1);
+            C2D_ImageTint tinty;
+            C2D_AlphaImageTint(&tinty, opacity);
+
+            double renderPositionX = xPos;
+            double renderPositionY = yPos;
+
+            if (!centered) {
+                renderPositionX += getWidth() / 2;
+                renderPositionY += getHeight() / 2;
+            }
+
+            C2D_DrawImageAtRotated(imageC2Ds[rgbaIt->name].image, static_cast<int>(renderPositionX), static_cast<int>(renderPositionY), 1, rotation, &tinty, scale, scale);
         }
     }
 }

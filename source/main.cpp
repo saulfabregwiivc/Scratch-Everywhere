@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
             while (!isLoaded) {
 
                 menu.render();
-                if ((!menu.hasProjects && menu.shouldExit) || !Render::appShouldRun()) {
+                if (!Render::appShouldRun()) {
                     exitApp();
                     return 0;
                 }
