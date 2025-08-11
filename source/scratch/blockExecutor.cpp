@@ -221,6 +221,16 @@ void BlockExecutor::registerExtensionHandlers() {
                     }
                     return Value(customBlock(arguments, data));
                 }
+                if (type.get<std::string>() == "string") {
+                    auto customBlock = reinterpret_cast<void (*)(std::map<std::string, std::any> &, std::string *, ExtensionData)>(dlsym(extension.handle, block.opcode.c_str()));
+                    if ((error = dlerror()) != NULL) {
+                        Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
+                        return Value();
+                    }
+                    std::string ret;
+                    customBlock(arguments, &ret, data);
+                    return Value(ret);
+                }
                 Log::logWarning("Extension block: '" + block.opcode + "' using unknown type: " + type.get<std::string>());
                 return Value();
             };
