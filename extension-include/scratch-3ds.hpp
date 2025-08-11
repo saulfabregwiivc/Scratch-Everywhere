@@ -110,8 +110,8 @@ struct ExtensionSprite {
 
 struct ExtensionData {
     int currentSprite;
-    std::function<const ExtensionSprite(int)> getSprite();
-    std::function<const std::vector<ExtensionSprite>(int)> getSprites();
+    std::function<ExtensionSprite(int)> getSprite();
+    std::function<std::vector<ExtensionSprite>(int)> getSprites();
 
 #ifdef SDL_BUILD
     SDL_GameController *controller;
