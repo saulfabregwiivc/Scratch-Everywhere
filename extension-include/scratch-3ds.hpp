@@ -109,7 +109,7 @@ struct ExtensionSprite {
 };
 
 struct ExtensionData {
-    std::function<ExtensionSprite()> getSprite;
+    std::function<ExtensionSprite()> getSprite; // If this is not being ran in a sprite this will just be a nullptr
     std::function<std::vector<ExtensionSprite>()> getSprites;
 
     std::function<void(std::string)> logInfo;
