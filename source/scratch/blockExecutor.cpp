@@ -191,6 +191,10 @@ void BlockExecutor::registerExtensionHandlers() {
                             extensionSprites.push_back(convertSpriteToExtensionSprite(sprite));
                         return extensionSprites;
                     },
+                    [](std::string message) { Log::log(message); },
+                    [](std::string message) { Log::logWarning(message); },
+                    [](std::string message) { Log::logError(message); },
+
 #ifdef SDL_BUILD
                     controller,
                     window,

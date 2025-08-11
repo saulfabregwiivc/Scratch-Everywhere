@@ -112,6 +112,10 @@ struct ExtensionData {
     std::function<ExtensionSprite()> getSprite;
     std::function<std::vector<ExtensionSprite>()> getSprites;
 
+    std::function<void(std::string)> logInfo;
+    std::function<void(std::string)> logWarning;
+    std::function<void(std::string)> logError;
+
 #ifdef SDL_BUILD
     SDL_GameController *controller;
     SDL_Window *window;
