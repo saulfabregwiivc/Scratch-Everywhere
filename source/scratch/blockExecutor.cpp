@@ -362,7 +362,7 @@ std::vector<std::pair<Block *, Sprite *>> BlockExecutor::runBroadcasts() {
         for (auto &[id, block] : currentSprite->blocks) {
             if (block.opcode == "event_whenbroadcastreceived" &&
                 block.fields["BROADCAST_OPTION"][0] == currentBroadcast) {
-                blocksToRun.push_back({&block, currentSprite});
+                blocksToRun.push_back({ &block, currentSprite });
             }
         }
     }

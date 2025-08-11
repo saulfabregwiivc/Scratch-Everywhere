@@ -207,8 +207,8 @@ void Image::loadImageFromSB3(mz_zip_archive *zip, const std::string &costumeId) 
     if (isSVG) image->isSVG = true;
     image->spriteTexture = texture;
     SDL_QueryTexture(texture, nullptr, nullptr, &image->width, &image->height);
-    image->renderRect = {0, 0, image->width, image->height};
-    image->textureRect = {0, 0, image->width, image->height};
+    image->renderRect = { 0, 0, image->width, image->height };
+    image->textureRect = { 0, 0, image->width, image->height };
     image->memorySize = textureMemory;
 
     Log::log("Successfully loaded image: " + costumeId);

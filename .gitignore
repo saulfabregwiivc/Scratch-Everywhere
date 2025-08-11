@@ -1,6 +1,7 @@
 # folders
 .vs/
 .vscode/
+.cache/
 build/
 romfs/project/
 romfs/gfx
@@ -57,3 +58,6 @@ extensions/
 
 # Stored Files
 cloud-username.txt
+
+# Other
+compile_commands.json

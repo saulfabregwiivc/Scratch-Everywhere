@@ -85,10 +85,10 @@ std::vector<std::pair<double, double>> getCollisionPoints(Sprite *currentSprite)
 
     // Define the four corners relative to the sprite's center
     std::vector<std::pair<double, double>> corners = {
-        {-halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY)}, // Top-left
-        {halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY)},  // Top-right
-        {halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY)},   // Bottom-right
-        {-halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY)}   // Bottom-left
+        { -halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY) }, // Top-left
+        { halfWidth - (rotationCenterX * currentSprite->size * 0.01), -halfHeight + (rotationCenterY) },  // Top-right
+        { halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY) },   // Bottom-right
+        { -halfWidth - (rotationCenterX * currentSprite->size * 0.01), halfHeight + (rotationCenterY) }   // Bottom-left
     };
 
     // Rotate and translate each corner
@@ -589,7 +589,7 @@ void loadExtensions(const nlohmann::json &json) {
             Log::logError("Failed to load extension library: " + extensionsPrefix + name + libExt + ", dlerror: " + dlerror());
             continue;
         }
-        extensions.push_back((struct Extension){name, typesJSON, handle});
+        extensions.push_back((struct Extension){ name, typesJSON, handle });
     }
 
     executor.registerExtensionHandlers();

@@ -86,9 +86,8 @@ struct ExtensionSprite {
     int *layer;
     float *ghostEffect;
     double *colorEffect;
-    RotationStyle *rotationStyle;
-    int *spriteWidth;
-    int *spriteHeight;
+    int *width;
+    int *height;
     std::vector<std::pair<double, double>> *collisionPoints;
 
     const std::unordered_map<std::string, ExtensionVariable> variables;
@@ -97,12 +96,16 @@ struct ExtensionSprite {
     const std::unordered_map<std::string, ExtensionList> lists;
     std::function<void(std::string, std::vector<std::any>)> setList;
     std::function<void(std::string, int, std::any)> setListItem;
+    std::function<void(std::string, std::any)> pushList;
 
     const std::vector<ExtensionCostume> costumes;
     std::function<void(int)> switchCostumeTo;
 
     const std::unordered_map<std::string, ExtensionBroadcast> broadcasts;
     std::function<void(std::string)> broadcast;
+
+    const RotationStyle rotationStyle;
+    std::function<void(RotationStyle)> setRotationStyle;
 };
 
 struct ExtensionData {
