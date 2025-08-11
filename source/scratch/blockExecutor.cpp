@@ -11,6 +11,7 @@
 #include "extension.hpp"
 #include "interpret.hpp"
 #include "os.hpp"
+#include "scratch-3ds.hpp"
 #include "value.hpp"
 #include <dlfcn.h>
 #include <fstream>
@@ -24,6 +25,15 @@ extern std::unique_ptr<MistConnection> cloudConnection;
 
 size_t blocksRun = 0;
 Timer BlockExecutor::timer;
+
+#ifdef SDL_BUILD
+extern SDL_GameController *controller;
+extern SDL_Window *window;
+extern SDL_Renderer *renderer;
+#elif defined(__3DS__)
+extern C3D_RenderTarget *topScreen;
+extern C3D_RenderTarget *bottomScreen;
+#endif
 
 BlockExecutor::BlockExecutor() {
     registerHandlers();
@@ -171,21 +181,41 @@ void BlockExecutor::registerExtensionHandlers() {
                 }
                 char *error;
 
+                ExtensionData data = {
+                    [sprite]() {
+                        return convertSpriteToExtensionSprite(sprite);
+                    },
+                    []() {
+                        std::vector<ExtensionSprite> extensionSprites;
+                        for (const auto &sprite : sprites)
+                            extensionSprites.push_back(convertSpriteToExtensionSprite(sprite));
+                        return extensionSprites;
+                    },
+#ifdef SDL_BUILD
+                    controller,
+                    window,
+                    renderer
+#elif defined(__3DS__)
+                    topScreen,
+                    bottomScreen
+#endif
+                };
+
                 if (type.get<std::string>() == "int") {
-                    auto customBlock = reinterpret_cast<int (*)(std::map<std::string, std::any> &)>(dlsym(extension.handle, block.opcode.c_str()));
+                    auto customBlock = reinterpret_cast<int (*)(std::map<std::string, std::any> &, ExtensionData)>(dlsym(extension.handle, block.opcode.c_str()));
                     if ((error = dlerror()) != NULL) {
                         Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
                         return Value();
                     }
-                    return Value(customBlock(arguments));
+                    return Value(customBlock(arguments, data));
                 }
                 if (type.get<std::string>() == "bool") {
-                    auto customBlock = reinterpret_cast<bool (*)(std::map<std::string, std::any> &)>(dlsym(extension.handle, block.opcode.c_str()));
+                    auto customBlock = reinterpret_cast<bool (*)(std::map<std::string, std::any> &, ExtensionData)>(dlsym(extension.handle, block.opcode.c_str()));
                     if ((error = dlerror()) != NULL) {
                         Log::logError("Failed to load function for: '" + block.opcode + "', error: " + error);
                         return Value();
                     }
-                    return Value(customBlock(arguments));
+                    return Value(customBlock(arguments, data));
                 }
                 Log::logWarning("Extension block: '" + block.opcode + "' using unknown type: " + type.get<std::string>());
                 return Value();
