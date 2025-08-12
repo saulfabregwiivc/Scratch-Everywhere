@@ -11,7 +11,7 @@ double MenuObject::getScaleFactor(int windowX, int windowY) {
     return std::min(scaleX, scaleY);
 }
 
-ButtonObject::ButtonObject(std::string buttonText, int w, int h, int xPos, int yPos) {
+ButtonObject::ButtonObject(std::string buttonText, std::string filePath, int w, int h, int xPos, int yPos) {
     width = w;
     height = h;
     x = xPos;
@@ -19,6 +19,7 @@ ButtonObject::ButtonObject(std::string buttonText, int w, int h, int xPos, int y
     scale = 1.0;
     text = createTextObject(buttonText, x, y);
     text->setCenterAligned(true);
+    buttonTexture = new MenuImage(filePath);
 }
 
 bool ButtonObject::isPressed() {
@@ -54,6 +55,11 @@ void ButtonObject::render() {
 
     text->setScale(scale * scaleFactor);
     text->render(actualX, actualY);
+}
+
+ButtonObject::~ButtonObject() {
+    delete text;
+    delete buttonTexture;
 }
 
 MenuImage::MenuImage(std::string filePath, int xPos, int yPos) {

@@ -19,6 +19,7 @@ class ButtonObject : public MenuObject {
 
   public:
     bool isSelected = false;
+    MenuImage *buttonTexture;
     ButtonObject *buttonUp;
     ButtonObject *buttonDown;
     ButtonObject *buttonLeft;
@@ -35,7 +36,8 @@ class ButtonObject : public MenuObject {
      * @param xPosition
      * @param yPosition
      */
-    ButtonObject(std::string buttonText, int w = 16, int h = 16, int xPos = 0, int yPos = 0);
+    ButtonObject(std::string buttonText, std::string filePath, int w = 16, int h = 16, int xPos = 0, int yPos = 0);
+    ~ButtonObject();
 };
 
 class MenuImage : public MenuObject {
