@@ -83,7 +83,11 @@ std::string OS::getScratchFolderLocation() {
 #elif defined(__SWITCH__)
     return "/switch/scratch-nx/";
 #elif defined(__OGC__)
-    return "/";
+    #if defined(WII)
+        return "/apps/scratch-wii/";
+    #else
+        return "/";
+    #endif
 #else
     return "scratch-everywhere/";
 #endif
